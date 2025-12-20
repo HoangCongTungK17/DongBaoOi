@@ -189,6 +189,10 @@ function DisasterZonesPage() {
 
   // list all disaster zones
   const disasterStore = useSelector((store) => store.disasterStore);
+
+  const { isAdmin } = useSelector((store) => store.authStore); // lay quyen admin
+
+
   useEffect(() => {
     dispatch(getAllDisasterZones());
   }, [dispatch]);
@@ -334,16 +338,19 @@ function DisasterZonesPage() {
       });
   }
 
-  const typeOptions = [
-  "",
-  "LŨ LỤT",
-  "BÃO/SIÊU BÃO",
-  "SẠT LỞ ĐẤT",
-  "CHÁY RỪNG",
-  "CHÁY NHÀ",
-  "MƯA ĐÁ",
-  "NGẬP ÚNG",
-  "HẠN HÁN"
+const typeOptions = [
+    "",
+    "LŨ LỤT",
+    "ĐỘNG ĐẤT",      
+    "SẠT LỞ ĐẤT",
+    "BÃO/SIÊU BÃO",
+    "HỐ SỤT ĐẤT",      
+    "TRIỀU CƯỜNG",     
+    "CHÁY RỪNG",
+    "MƯA ĐÁ",
+    "CHÁY NHÀ",
+    "KHÔNG XÁC ĐỊNH"   
+    
   ];
 
   const dangerOptions = ["", "LOW", "MEDIUM", "HIGH"];
@@ -418,14 +425,27 @@ function DisasterZonesPage() {
                 Làm mới bộ lọc
               </button>
             </div>
-            <div className="flex items-center justify-end lg:col-span-1">
+
+            {/* <div className="flex items-center justify-end lg:col-span-1">
               <button
                 onClick={openAdd}
                 className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <Plus className="h-4 w-4" /> Khu vực mới
               </button>
-            </div>
+            </div> */}
+
+            {isAdmin && (
+              <div className="flex items-center justify-end lg:col-span-1">
+                <button
+                  onClick={openAdd}
+                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <Plus className="h-4 w-4" /> Khu vực mới
+                </button>
+              </div>
+            )}
+
           </div>
         </section>
 
@@ -466,7 +486,7 @@ function DisasterZonesPage() {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between gap-2">
-                    <div className="flex gap-2">
+                    {/* <div className="flex gap-2">
                       <button
                         onClick={() => openEdit(z)}
                         className="inline-flex items-center gap-1 rounded-md bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700"
@@ -479,7 +499,25 @@ function DisasterZonesPage() {
                       >
                         <Trash2 className="h-3.5 w-3.5" /> Xóa
                       </button>
-                    </div>
+                    </div> */}
+                    {isAdmin ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openEdit(z)}
+                          className="inline-flex items-center gap-1 rounded-md bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700"
+                        >
+                          <Pencil className="h-3.5 w-3.5" /> Chỉnh sửa
+                        </button>
+                        <button
+                          onClick={() => openDelete(z)}
+                          className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> Xóa
+                        </button>
+                      </div>
+                    ) : (
+                      <div /> // Giữ khoảng trống layout
+                    )}
                     <button
                       onClick={() => navigate(`/zones/${z.id}`)}
                       className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"

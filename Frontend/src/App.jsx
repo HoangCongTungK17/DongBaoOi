@@ -11,6 +11,8 @@ import { isTokenValid } from "./Redux/Auth/isTokenValid.js";
 import { LOGOUT } from "./Redux/Auth/ActionType.js";
 import { Toaster } from "sonner";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import ReportPage from "./pages/ReportPage.jsx";
+import ContactsPage from "./pages/ContactsPage.jsx";
 
 function App() {
   const { isAuthenticated, accessToken } = useSelector((store) => store.authStore);
@@ -36,6 +38,8 @@ function App() {
             <Route path="/zones/:id" element={<ZonesDetailsPage />} />
             <Route path="/sos" element={<SOSRequestsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/report" element={<ReportPage />} />
+            <Route path="/contacts" element={<ContactsPage />} />
           </Routes>
         </div>
       )}

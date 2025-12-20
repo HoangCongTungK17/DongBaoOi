@@ -3,9 +3,10 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import {
+  Activity,
+  CircleDot,
+  Waves,
   AlertTriangle,
-  Search,
-  Filter as FilterIcon,
   MapPin,
   Info,
   ChevronLeft,
@@ -13,7 +14,6 @@ import {
   Droplets,
   Mountain,
   Wind,
-  Zap,
   Flame,
   CloudRain,
 } from "lucide-react";
@@ -23,7 +23,7 @@ import { getEveryoneSos, udpateSosStatus } from "../../Redux/SOS/Action";
 import { toast } from "sonner";
 import AddSosModal from "./AddSosModal.jsx";
 
-// Colored marker icons
+// --- Cấu hình Icon Marker ---
 const redIcon = L.icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
   iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
@@ -66,20 +66,13 @@ const blueIcon = L.icon({
 
 const statusToIcon = (status) => {
   switch (status) {
-    case "PENDING":
-      return redIcon;
-    case "HANDLING":
-      return yellowIcon;
-    case "COMPLETED":
-      return greenIcon;
-    case "CANCELLED":
-      return blueIcon;
-    default:
-      return redIcon;
+    case "PENDING": return redIcon;
+    case "HANDLING": return yellowIcon;
+    case "COMPLETED": return greenIcon;
+    case "CANCELLED": return blueIcon;
+    default: return redIcon;
   }
 };
-
-<button className="bg-in"></button>;
 
 const statusBadge = (status) => {
   const map = {
@@ -104,24 +97,16 @@ const riskBadge = (level) => {
 
 const disasterIcon = (type) => {
   switch (type) {
-    case "LŨ LỤT":
-      return <Droplets className="h-4 w-4 text-blue-400" />;
-    case "BÃO/SIÊU BÃO":
-      return <Mountain className="h-4 w-4 text-orange-400" />;
-    case "CHÁY NHÀ":
-      return <Mountain className="h-4 w-4 text-green-400" />;
-    case "CHÁY RỪNG":
-      return <CloudRain className="h-4 w-4 text-purple-400" />;
-    case "MƯA ĐÁ":
-      return <Flame className="h-4 w-4 text-red-400" />;
-    case "NGẬP ÚNG":
-      return <Wind className="h-4 w-4 text-cyan-400" />;
-    case "SẠT LỞ ĐẤT":
-      return <Info className="h-4 w-4 text-yellow-400" />; // pick a better icon if you want
-    case "Hạn hán":
-      return <CloudRain className="h-4 w-4 text-slate-200" />; // snowflake icon if available
-    default:
-      return <Info className="h-4 w-4 text-slate-300" />;
+    case "LŨ LỤT": return <Droplets className="h-4 w-4 text-blue-400" />;
+    case "BÃO/SIÊU BÃO": return <Wind className="h-4 w-4 text-slate-400" />;
+    case "CHÁY NHÀ": return <Flame className="h-4 w-4 text-orange-500" />;
+    case "CHÁY RỪNG": return <Flame className="h-4 w-4 text-red-600" />;
+    case "MƯA ĐÁ": return <CloudRain className="h-4 w-4 text-cyan-300" />;
+    case "SẠT LỞ ĐẤT": return <Mountain className="h-4 w-4 text-yellow-600" />;
+    case "ĐỘNG ĐẤT": return <Activity className="h-4 w-4 text-amber-700" />;
+    case "HỐ SỤT ĐẤT": return <CircleDot className="h-4 w-4 text-slate-500" />;
+    case "TRIỀU CƯỜNG": return <Waves className="h-4 w-4 text-blue-700" />;
+    default: return <Info className="h-4 w-4 text-slate-300" />;
   }
 };
 
@@ -129,7 +114,7 @@ export default function SOSRequestsPage() {
   const dispatch = useDispatch();
   const sosStore = useSelector((store) => store.sosStore);
   const { isAdmin } = useSelector((store) => store.authStore);
-  // After const sosStore...
+  
   const [localStatus, setLocalStatus] = useState({});
 
   useEffect(() => {
@@ -152,7 +137,8 @@ export default function SOSRequestsPage() {
         status: r.sosStatus,
         zoneId: r.disasterZoneDto?.id || null,
         zoneName: r.disasterZoneDto?.name || "No Zone",
-        disasterType: r.disasterZoneDto?.disasterType || "UNKNOWN",
+        // Ưu tiên lấy loại thảm họa từ chính request, nếu không thì lấy từ zone
+        disasterType: r.disasterType || r.disasterZoneDto?.disasterType || "UNKNOWN",
         dangerLevel: r.disasterZoneDto?.dangerLevel || "N/A",
       }));
       setSos(normalized);
@@ -166,21 +152,29 @@ export default function SOSRequestsPage() {
     }
   }, [sosStore?.allSos]);
 
-  // Add request
+  // Modal logic
   const [showAddModal, setShowAddModal] = useState(false);
+  
+  // Hàm xử lý đóng modal và tự động tải lại dữ liệu
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    dispatch(getEveryoneSos()); 
+  };
 
   // Filters
   const statuses = ["PENDING", "COMPLETED", "HANDLING", "CANCELLED"];
   const typeOptions = [
-  "",
-  "LŨ LỤT",
-  "BÃO/SIÊU BÃO",
-  "SẠT LỞ ĐẤT",
-  "CHÁY RỪNG",
-  "CHÁY NHÀ",
-  "MƯA ĐÁ",
-  "NGẬP ÚNG",
-  "HẠN HÁN"
+    "",
+    "LŨ LỤT",
+    "ĐỘNG ĐẤT",
+    "SẠT LỞ ĐẤT",
+    "BÃO/SIÊU BÃO",
+    "HỐ SỤT ĐẤT",
+    "TRIỀU CƯỜNG",
+    "CHÁY RỪNG",
+    "MƯA ĐÁ",
+    "CHÁY NHÀ",
+    "KHÔNG XÁC ĐỊNH"
   ];
 
   const [typeFilter, setTypeFilter] = useState("");
@@ -194,14 +188,12 @@ export default function SOSRequestsPage() {
     () =>
       (sos || []).filter((r) => {
         const matchesZoneName = !zoneNameFilter || (r.zoneName || "").toLowerCase().includes(zoneNameFilter.toLowerCase());
-
         const matchesZoneId = !zoneIdFilter || String(r.zoneId || "") === zoneIdFilter.trim();
 
         if (zoneNameFilter && !matchesZoneName) return false;
         if (zoneIdFilter && !matchesZoneId) return false;
 
         const matchesType = hasZoneFilter ? true : !typeFilter || r.disasterType === typeFilter;
-
         const matchesStatus = !statusFilter || r.status === statusFilter;
 
         return matchesType && matchesStatus;
@@ -237,6 +229,7 @@ export default function SOSRequestsPage() {
       .map(([zone, count]) => ({ zone, count, risk: risks[zone] === 3 ? "HIGH" : risks[zone] === 2 ? "MEDIUM" : "LOW" }));
   }, [filtered]);
 
+  // Functions
   const updateStatus = (id, next) => {
     dispatch(udpateSosStatus({ sosId: id, status: next })).then((result) => {
       if (udpateSosStatus.rejected.match(result)) {
@@ -247,7 +240,6 @@ export default function SOSRequestsPage() {
     });
   };
 
-  // Interactive filter handlers from analytics
   const setFilterStatus = (s) => setStatusFilter((prev) => (prev === s ? "" : s));
   const setFilterType = (t) => setTypeFilter((prev) => (prev === t ? "" : t));
   const clearFilters = () => {
@@ -257,24 +249,20 @@ export default function SOSRequestsPage() {
     setZoneIdFilter("");
   };
 
-  // Horizontal bar data with percentages
+  // Bar Data
   const statusTotal = byStatus.reduce((sum, s) => sum + s.value, 0) || 1;
   const statusBarData = byStatus.map((s) => ({ name: s.name, count: s.value, pct: Math.round((s.value / statusTotal) * 100) }));
   const typeTotal = byType.reduce((sum, t) => sum + t.value, 0) || 1;
   const typeBarData = byType.map((t) => ({ name: t.name, count: t.value, pct: Math.round((t.value / typeTotal) * 100) }));
 
+  // Colors
   const barColorForStatus = (name) => {
     switch (name) {
-      case "PENDING":
-        return "#ef4444"; // red
-      case "HANDLING":
-        return "#f59e0b"; // yellow
-      case "COMPLETED":
-        return "#10b981"; // green
-      case "CANCELLED":
-        return "#3b82f6"; // blue
-      default:
-        return "#94a3b8"; // gray fallback
+      case "PENDING": return "#ef4444";
+      case "HANDLING": return "#f59e0b";
+      case "COMPLETED": return "#10b981";
+      case "CANCELLED": return "#3b82f6";
+      default: return "#94a3b8";
     }
   };
 
@@ -286,8 +274,10 @@ export default function SOSRequestsPage() {
         "CHÁY RỪNG": "#fbbf24",
         "CHÁY NHÀ": "#06b6d4",
         "MƯA ĐÁ": "#ef4444",
-        "NGẬP ÚNG": "#8b5cf6",
-        "HẠN HÁN": "#b45309",
+        "ĐỘNG ĐẤT": "#78350f",     // Amber/Brown
+        "HỐ SỤT ĐẤT": "#4b5563",   // Gray
+        "TRIỀU CƯỜNG": "#1e40af",  // Dark Blue
+        "KHÔNG XÁC ĐỊNH": "#94a3b8" // Slate
     }[name] || "#94a3b8");
 
   // Hover highlights
@@ -315,9 +305,7 @@ export default function SOSRequestsPage() {
             <button
               onClick={() => {
                 dispatch(getEveryoneSos()).then(() => {
-                  if (sosStore?.allSos !== null) {
-                    toast.info("All sos requests are up to date");
-                  }
+                  toast.info("All sos requests are up to date");
                 });
               }}
               className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 active:bg-indigo-900"
@@ -332,7 +320,8 @@ export default function SOSRequestsPage() {
             >
               Thêm yêu cầu
             </button>
-            <AddSosModal open={showAddModal} onClose={() => setShowAddModal(false)} />
+            {/* Sử dụng handleCloseModal để refresh dữ liệu */}
+            <AddSosModal open={showAddModal} onClose={handleCloseModal} />
           </div>
         </section>
 
@@ -372,7 +361,7 @@ export default function SOSRequestsPage() {
                 <option value="" className="bg-slate-900">
                   Tất cả loại thảm họa
                 </option>
-                {typeOptions.map((t) => (
+                {typeOptions.filter(t => t !== "").map((t) => (
                   <option key={t} value={t} className="bg-slate-900">
                     {t}
                   </option>
@@ -456,14 +445,9 @@ export default function SOSRequestsPage() {
             <div className="text-xs text-slate-300 bg-slate-950/60 border border-slate-800 rounded-lg p-3">
               <div className="font-semibold text-slate-200 mb-2">Disaster Type Icons</div>
               <div className="flex flex-wrap items-center gap-3">
-                <span className="inline-flex items-center gap-1">{disasterIcon("LŨ LỤT")} Lũ lụt</span>
-                <span className="inline-flex items-center gap-1">{disasterIcon("BÃO/SIÊU BÃO")} Bão/Siêu bão</span>
-                <span className="inline-flex items-center gap-1">{disasterIcon("SẠT LỞ ĐẤT")} Sạt lở đất</span>
-                <span className="inline-flex items-center gap-1">{disasterIcon("CHÁY RỪNG")} Cháy rừng</span>
-                <span className="inline-flex items-center gap-1">{disasterIcon("CHÁY NHÀ")} Cháy nhà</span>
-                <span className="inline-flex items-center gap-1">{disasterIcon("MƯA ĐÁ")} Mưa đá</span>
-                <span className="inline-flex items-center gap-1">{disasterIcon("NGẬP ÚNG")} Ngập úng</span>
-                <span className="inline-flex items-center gap-1">{disasterIcon("HẠN HÁN")} Hạn hán</span>
+                {typeOptions.filter(t => t !== "").map(t => (
+                   <span key={t} className="inline-flex items-center gap-1">{disasterIcon(t)} {t}</span>
+                ))}
               </div>
             </div>
           </div>
@@ -553,7 +537,7 @@ export default function SOSRequestsPage() {
                 </ResponsiveContainer>
               </div>
               <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-slate-400">
-                {typeBarData.map((t) => (
+                {typeBarData.filter(t => t.name !== "").map((t) => (
                   <span key={t.name} className="inline-flex items-center gap-2">
                     <span className="inline-block h-2 w-2 rounded" style={{ backgroundColor: barColorForType(t.name) }}></span>
                     {t.name}: <span className="text-slate-300 font-medium">{t.count}</span> ({t.pct}%)
@@ -613,9 +597,6 @@ export default function SOSRequestsPage() {
                       {r.zoneName !== "No Zone" ? `${r.zoneName} • ${r.disasterType}` : "Ngoài tất cả các khu vực"}
                     </div>
                     <div className="text-[11px] text-slate-500">{new Date(r.updatedAt).toLocaleString()}</div>
-                    <div className="text-[11px] text-slate-400">
-                      {r.zoneName !== "No Zone" ? `${r.zoneName} • ${r.disasterType}` : "Ngoài tất cả các khu vực"}
-                    </div>
                     <span className={`${riskBadge(r.dangerLevel)} mt-1`}>{r.dangerLevel !== "N/A" ? `${r.dangerLevel} RISK` : "No Zone"}</span>
                   </div>
                   <div className="flex items-center gap-2">
