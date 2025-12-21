@@ -1,9 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { MapContainer, TileLayer, Marker, Circle } from "react-leaflet";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+// --- [BẮT ĐẦU SỬA ĐỔI]: Thêm import cần thiết cho Map tương tác ---
+import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from "react-leaflet";
+import { Plus, X, Pencil, Trash2, Filter, ChevronLeft, ChevronRight, Eye, MapPin, Search, Loader2, Crosshair, Target } from "lucide-react";
+// --- [KẾT THÚC SỬA ĐỔI] ---
 import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Plus, X, Pencil, Trash2, Map as MapIcon, Filter, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { createDisasterZone, deleteDisasterZone, getAllDisasterZones, udpateDisasterZone } from "../Redux/DisasterZone/Action.js";
 import { toast } from "sonner";
@@ -34,16 +36,126 @@ const dangerBadgeClass = (level) => {
 
 const circleStyleForDanger = (level) => {
   switch (level) {
-    case "HIGH":
-      return { color: "#ef4444", fillColor: "#ef4444", fillOpacity: 0.4 };
-    case "MEDIUM":
-      return { color: "#f59e0b", fillColor: "#f59e0b", fillOpacity: 0.3 };
-    case "LOW":
-      return { color: "#10b981", fillColor: "#10b981", fillOpacity: 0.2 };
-    default:
-      return { color: "#64748b", fillColor: "#64748b", fillOpacity: 0.2 };
+    case "HIGH": return { color: "#ef4444", fillColor: "#ef4444", fillOpacity: 0.3 };
+    case "MEDIUM": return { color: "#f59e0b", fillColor: "#f59e0b", fillOpacity: 0.25 };
+    case "LOW": return { color: "#10b981", fillColor: "#10b981", fillOpacity: 0.2 };
+    default: return { color: "#64748b", fillColor: "#64748b", fillOpacity: 0.2 };
   }
 };
+
+// --- [BẮT ĐẦU SỬA ĐỔI]: CÁC COMPONENT HỖ TRỢ CHO FORM MAP MỚI ---
+
+// 1. Tự động bay map đến tọa độ mới
+function MapViewUpdater({ center }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.flyTo(center, 13, { animate: true, duration: 1.5 });
+    }
+  }, [center, map]);
+  return null;
+}
+
+// 2. Marker có thể kéo thả (Draggable)
+function DraggableMarker({ position, setPosition }) {
+  const markerRef = useRef(null);
+  const eventHandlers = useMemo(() => ({
+      dragend() {
+        const marker = markerRef.current;
+        if (marker != null) {
+          const { lat, lng } = marker.getLatLng();
+          setPosition(lat, lng);
+        }
+      },
+    }), [setPosition]);
+
+  return <Marker draggable={true} eventHandlers={eventHandlers} position={position} ref={markerRef} />;
+}
+
+// 3. Xử lý sự kiện click vào bản đồ
+function MapEventsHandler({ onLocationChange }) {
+  useMapEvents({ click(e) { onLocationChange(e.latlng.lat, e.latlng.lng); } });
+  return null;
+}
+
+// 4. BỘ CHỌN VỊ TRÍ THÔNG MINH (Search + Map + Drag)
+function SmartLocationPicker({ lat, lng, radius, dangerLevel, onLocationChange }) {
+  useLeafletDefaultIcon();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+
+  const mapCenter = (lat && lng && !isNaN(lat) && !isNaN(lng)) ? [lat, lng] : [16.0471, 108.2068];
+  const hasValidCoords = lat && lng && !isNaN(lat) && !isNaN(lng);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=vn&limit=1`);
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const result = data[0];
+        onLocationChange(parseFloat(result.lat), parseFloat(result.lon));
+        toast.success(`Đã tìm thấy: ${result.display_name.split(",")[0]}`);
+      } else {
+        toast.error("Không tìm thấy địa điểm này.");
+      }
+    } catch (error) {
+      toast.error("Lỗi kết nối bản đồ.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-3 h-full">
+      {/* Thanh tìm kiếm */}
+      <div className="flex gap-2">
+         <div className="relative flex-1 group">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+            <input 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Nhập địa danh (VD: Hồ Gươm)..."
+              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 pl-9 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
+            />
+         </div>
+         <button 
+           type="button" 
+           onClick={handleSearch} 
+           disabled={isSearching} 
+           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium shadow-lg shadow-indigo-900/20 disabled:opacity-50 transition-all flex items-center gap-2"
+         >
+           {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Tìm"}
+         </button>
+      </div>
+
+      {/* Bản đồ */}
+      <div className="relative flex-1 min-h-[300px] w-full overflow-hidden rounded-xl border border-slate-700 shadow-inner">
+        <MapContainer center={mapCenter} zoom={hasValidCoords ? 13 : 5} className="h-full w-full">
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+          <MapViewUpdater center={mapCenter} />
+
+          {hasValidCoords && (
+             <>
+               <DraggableMarker position={mapCenter} setPosition={onLocationChange} />
+               <Circle center={mapCenter} radius={(parseFloat(radius) || 0) * 1000} pathOptions={circleStyleForDanger(dangerLevel)} />
+             </>
+          )}
+
+          <MapEventsHandler onLocationChange={onLocationChange} />
+        </MapContainer>
+        
+        {/* Overlay hướng dẫn */}
+        <div className="absolute bottom-3 right-3 z-[999] bg-slate-900/90 backdrop-blur px-3 py-2 text-xs text-slate-300 rounded-lg border border-slate-700 shadow-xl flex flex-col gap-1">
+           <span className="flex items-center gap-2"><MapPin className="h-3 w-3 text-red-500" /> Kéo thả marker để chọn tâm</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+// --- [KẾT THÚC SỬA ĐỔI COMPONENT] ---
 
 function MiniZoneMap({ lat, lng, radiusKm = 5, dangerLevel = "LOW" }) {
   useLeafletDefaultIcon();
@@ -63,19 +175,24 @@ function MiniZoneMap({ lat, lng, radiusKm = 5, dangerLevel = "LOW" }) {
   );
 }
 
+// --- [SỬA ĐỔI]: Modal được style lại rộng hơn để chứa map ---
 function Modal({ title, children, onClose, footer }) {
   return (
-    <div className="fixed inset-0 z-[9999] grid place-items-center p-4">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-          <h3 className="text-sm font-semibold text-slate-100">{title}</h3>
-          <button onClick={onClose} className="rounded-md p-1 text-slate-300 hover:bg-slate-800">
-            <X className="h-4 w-4" />
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4 bg-slate-900/50">
+          <h3 className="text-xl font-bold text-white tracking-tight">{title}</h3>
+          <button onClick={onClose} className="rounded-full p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+            <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="px-4 py-4">{children}</div>
-        {footer && <div className="flex justify-end gap-2 border-t border-slate-800 px-4 py-3">{footer}</div>}
+        
+        <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
+            {children}
+        </div>
+
+        {footer && <div className="border-t border-slate-800 bg-slate-900/50 px-6 py-4 flex justify-end gap-3">{footer}</div>}
       </div>
     </div>
   );
@@ -120,38 +237,13 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
   };
 
   return (
-    <>
-      <style>{`
-        .pagination-container {
-          --background: 0 0% 3.9%;
-          --foreground: 0 0% 98%;
-          --card: 0 0% 3.9%;
-          --card-foreground: 0 0% 98%;
-          --popover: 0 0% 3.9%;
-          --popover-foreground: 0 0% 98%;
-          --primary: 0 0% 98%;
-          --primary-foreground: 0 0% 9%;
-          --secondary: 0 0% 14.9%;
-          --secondary-foreground: 0 0% 98%;
-          --muted: 0 0% 14.9%;
-          --muted-foreground: 0 0% 63.9%;
-          --accent: 0 0% 14.9%;
-          --accent-foreground: 0 0% 98%;
-          --destructive: 0 62.8% 30.6%;
-          --destructive-foreground: 0 0% 98%;
-          --border: 0 0% 14.9%;
-          --input: 0 0% 14.9%;
-          --ring: 0 0% 83.1%;
-        }
-      `}</style>
-      <div className="pagination-container flex items-center justify-center space-x-1">
+    <div className="flex items-center justify-center space-x-1">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-700 bg-slate-900 hover:bg-slate-800 hover:text-slate-100 h-10 w-10 text-slate-300"
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium border border-slate-700 bg-slate-900 hover:bg-slate-800 hover:text-slate-100 h-10 w-10 text-slate-300 disabled:opacity-50"
         >
           <ChevronLeft className="h-4 w-4" />
-          <span className="sr-only">Quay lại trang trước</span>
         </button>
 
         {getPageNumbers().map((page, index) => (
@@ -159,7 +251,7 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
             key={index}
             onClick={() => typeof page === "number" && onPageChange(page)}
             disabled={page === "..."}
-            className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border h-10 w-10 ${
+            className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium border h-10 w-10 ${
               page === currentPage
                 ? "bg-indigo-600 text-white hover:bg-indigo-700 border-indigo-600"
                 : "bg-slate-900 hover:bg-slate-800 hover:text-slate-100 border-slate-700 text-slate-300"
@@ -172,13 +264,11 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-slate-700 bg-slate-900 hover:bg-slate-800 hover:text-slate-100 h-10 w-10 text-slate-300"
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium border border-slate-700 bg-slate-900 hover:bg-slate-800 hover:text-slate-100 h-10 w-10 text-slate-300 disabled:opacity-50"
         >
           <ChevronRight className="h-4 w-4" />
-          <span className="sr-only">Sang trang kế tiếp</span>
         </button>
       </div>
-    </>
   );
 }
 
@@ -187,17 +277,13 @@ function DisasterZonesPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // list all disaster zones
   const disasterStore = useSelector((store) => store.disasterStore);
-
-  const { isAdmin } = useSelector((store) => store.authStore); // lay quyen admin
-
+  const { isAdmin } = useSelector((store) => store.authStore);
 
   useEffect(() => {
     dispatch(getAllDisasterZones());
   }, [dispatch]);
 
-  // Placeholder dataset
   const [zones, setZones] = useState([]);
 
   useEffect(() => {
@@ -221,7 +307,7 @@ function DisasterZonesPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [activeZone, setActiveZone] = useState(null);
 
-  // Form state for Add/Edit
+  // Form state
   const [form, setForm] = useState({
     name: "",
     disasterType: "Lũ lụt",
@@ -230,6 +316,17 @@ function DisasterZonesPage() {
     centerLongitude: "",
     radius: "",
   });
+
+  // --- [BẮT ĐẦU SỬA ĐỔI]: Hàm xử lý khi chọn vị trí trên Map ---
+  const handleLocationChange = (lat, lng) => {
+    // Làm tròn 6 số để gọn gàng nhưng vẫn chính xác
+    setForm(prev => ({
+      ...prev,
+      centerLatitude: lat.toFixed(6),
+      centerLongitude: lng.toFixed(6)
+    }));
+  };
+  // --- [KẾT THÚC SỬA ĐỔI] ---
 
   const filteredZones = useMemo(() => {
     return zones.filter((z) => {
@@ -240,7 +337,6 @@ function DisasterZonesPage() {
     });
   }, [zones, search, typeFilter, dangerFilter]);
 
-  // Pagination calculations
   const totalPages = Math.ceil(filteredZones.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -253,13 +349,12 @@ function DisasterZonesPage() {
     setCurrentPage(1);
   }
 
-  // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [search, typeFilter, dangerFilter]);
 
   function openAdd() {
-    setForm({ name: "", disasterType: "Lũ lụt", dangerLevel: "LOW", centerLatitude: "", centerLongitude: "", radius: "" });
+    setForm({ name: "", disasterType: "Lũ lụt", dangerLevel: "LOW", centerLatitude: "", centerLongitude: "", radius: "5" });
     setIsAddOpen(true);
   }
   function openEdit(zone) {
@@ -280,6 +375,12 @@ function DisasterZonesPage() {
   }
 
   function handleSave() {
+    // Validation
+    if(!form.centerLatitude || !form.centerLongitude) {
+        toast.error("Vui lòng chọn vị trí trên bản đồ hoặc nhập tọa độ!");
+        return;
+    }
+
     const newZone = {
       name: form.name.trim() || "Khu vực mới",
       disasterType: form.disasterType,
@@ -302,20 +403,18 @@ function DisasterZonesPage() {
   function handleUpdate() {
     if (!activeZone) return;
     const updatedZone = {
-      name: form.name.trim() || z.name,
+      name: form.name.trim() || activeZone.name,
       disasterType: form.disasterType,
       dangerLevel: form.dangerLevel,
-      centerLatitude: parseFloat(form.centerLatitude) || z.centerLatitude,
-      centerLongitude: parseFloat(form.centerLongitude) || z.centerLongitude,
-      radius: parseFloat(form.radius) || z.radius,
+      centerLatitude: parseFloat(form.centerLatitude) || activeZone.centerLatitude,
+      centerLongitude: parseFloat(form.centerLongitude) || activeZone.centerLongitude,
+      radius: parseFloat(form.radius) || activeZone.radius,
     };
 
     dispatch(udpateDisasterZone({ zoneData: updatedZone, id: activeZone.id }))
       .then(() => {
         dispatch(getAllDisasterZones());
-        if (disasterStore?.udpateZoneError == null) {
-          toast.success(`Khu vực "${updatedZone.name}" updated successfully`);
-        }
+        toast.success(`Khu vực "${updatedZone.name}" updated successfully`);
         setIsEditOpen(false);
       })
       .catch((err) => {
@@ -328,9 +427,7 @@ function DisasterZonesPage() {
     dispatch(deleteDisasterZone(activeZone.id))
       .then(() => {
         dispatch(getAllDisasterZones());
-        if (disasterStore?.deleteZoneError == null) {
-          toast.success("Xóa khu vực thành công");
-        }
+        toast.success("Xóa khu vực thành công");
         setIsDeleteOpen(false);
       })
       .catch((error) => {
@@ -338,22 +435,10 @@ function DisasterZonesPage() {
       });
   }
 
-const typeOptions = [
-    "",
-    "LŨ LỤT",
-    "ĐỘNG ĐẤT",      
-    "SẠT LỞ ĐẤT",
-    "BÃO/SIÊU BÃO",
-    "HỐ SỤT ĐẤT",      
-    "TRIỀU CƯỜNG",     
-    "CHÁY RỪNG",
-    "MƯA ĐÁ",
-    "CHÁY NHÀ",
-    "KHÔNG XÁC ĐỊNH"   
-    
-  ];
-
+  const typeOptions = ["", "LŨ LỤT", "ĐỘNG ĐẤT", "SẠT LỞ ĐẤT", "BÃO/SIÊU BÃO", "HỐ SỤT ĐẤT", "TRIỀU CƯỜNG", "CHÁY RỪNG", "MƯA ĐÁ", "CHÁY NHÀ", "KHÔNG XÁC ĐỊNH"];
   const dangerOptions = ["", "LOW", "MEDIUM", "HIGH"];
+
+ 
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -363,7 +448,7 @@ const typeOptions = [
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-100">Quản lí khu vực thảm họa</h1>
-              <p className="mt-1 text-sm text-slate-400">View, add, and manage khuu vực thảm họa</p>
+              <p className="mt-1 text-sm text-slate-400">Xem và quản lý các khu vực thảm họa</p>
             </div>
             <button
               onClick={() => navigate("/")}
@@ -389,51 +474,22 @@ const typeOptions = [
                 />
               </div>
             </div>
+            {/* ... Filters giữ nguyên ... */}
             <div>
               <label className="sr-only">Lọc theo loại thảm họa</label>
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              >
-                {typeOptions.map((opt) => (
-                  <option key={opt} value={opt} className="bg-slate-900">
-                    {opt || "Lọc theo loại thảm họa"}
-                  </option>
-                ))}
+              <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                {typeOptions.map((opt) => (<option key={opt} value={opt} className="bg-slate-900">{opt || "Lọc theo loại thảm họa"}</option>))}
               </select>
             </div>
             <div>
               <label className="sr-only">Lọc theo mức độ nguy hiểm</label>
-              <select
-                value={dangerFilter}
-                onChange={(e) => setDangerFilter(e.target.value)}
-                className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              >
-                {dangerOptions.map((opt) => (
-                  <option key={opt} value={opt} className="bg-slate-900">
-                    {opt || "Lọc theo mức độ nguy hiểm"}
-                  </option>
-                ))}
+              <select value={dangerFilter} onChange={(e) => setDangerFilter(e.target.value)} className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                {dangerOptions.map((opt) => (<option key={opt} value={opt} className="bg-slate-900">{opt || "Lọc theo mức độ nguy hiểm"}</option>))}
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={resetFilters}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-              >
-                Làm mới bộ lọc
-              </button>
+              <button onClick={resetFilters} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">Làm mới bộ lọc</button>
             </div>
-
-            {/* <div className="flex items-center justify-end lg:col-span-1">
-              <button
-                onClick={openAdd}
-                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <Plus className="h-4 w-4" /> Khu vực mới
-              </button>
-            </div> */}
 
             {isAdmin && (
               <div className="flex items-center justify-end lg:col-span-1">
@@ -445,13 +501,12 @@ const typeOptions = [
                 </button>
               </div>
             )}
-
           </div>
         </section>
 
         {/* Zones Grid */}
         {disasterStore?.allZonesError && <p className="text-red-500 text-center">Có lỗi xảy ra! Vui lòng làm mới trang</p>}
-        {disasterStore?.allZonesLoading && <p className="text-green-500 text-center">Đang lấy tất cả các khu vực đang hoạt động…</p>}
+        {disasterStore?.allZonesLoading && <p className="text-center text-slate-400 py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto mb-2"/>Đang lấy tất cả các khu vực đang hoạt động…</p>}
         <section>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {paginatedZones.map((z) => (
@@ -471,9 +526,7 @@ const typeOptions = [
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
                     <div>
                       <div className="text-slate-400">Tâm (vĩ độ, kinh độ)</div>
-                      <div>
-                        {z.centerLatitude.toFixed(4)}, {z.centerLongitude.toFixed(4)}
-                      </div>
+                      <div>{z.centerLatitude.toFixed(4)}, {z.centerLongitude.toFixed(4)}</div>
                     </div>
                     <div>
                       <div className="text-slate-400">Bán kính</div>
@@ -486,42 +539,17 @@ const typeOptions = [
                   </div>
 
                   <div className="mt-4 flex items-center justify-between gap-2">
-                    {/* <div className="flex gap-2">
-                      <button
-                        onClick={() => openEdit(z)}
-                        className="inline-flex items-center gap-1 rounded-md bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700"
-                      >
-                        <Pencil className="h-3.5 w-3.5" /> Chỉnh sửa
-                      </button>
-                      <button
-                        onClick={() => openDelete(z)}
-                        className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-red-700"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" /> Xóa
-                      </button>
-                    </div> */}
                     {isAdmin ? (
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => openEdit(z)}
-                          className="inline-flex items-center gap-1 rounded-md bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700"
-                        >
+                        <button onClick={() => openEdit(z)} className="inline-flex items-center gap-1 rounded-md bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700">
                           <Pencil className="h-3.5 w-3.5" /> Chỉnh sửa
                         </button>
-                        <button
-                          onClick={() => openDelete(z)}
-                          className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-red-700"
-                        >
+                        <button onClick={() => openDelete(z)} className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-red-700">
                           <Trash2 className="h-3.5 w-3.5" /> Xóa
                         </button>
                       </div>
-                    ) : (
-                      <div /> // Giữ khoảng trống layout
-                    )}
-                    <button
-                      onClick={() => navigate(`/zones/${z.id}`)}
-                      className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
-                    >
+                    ) : (<div />)}
+                    <button onClick={() => navigate(`/zones/${z.id}`)} className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-indigo-700">
                       <Eye className="h-3.5 w-3.5" /> Xem chi tiết
                     </button>
                   </div>
@@ -530,7 +558,6 @@ const typeOptions = [
             ))}
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="mt-6 flex justify-center">
               <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
@@ -539,182 +566,214 @@ const typeOptions = [
         </section>
       </main>
 
-      {/* Add Zone Modal */}
       {isAddOpen && (
         <Modal
-          title="Add Zone"
+          title="Thiết lập Khu vực Mới"
           onClose={() => setIsAddOpen(false)}
           footer={
             <>
               <button
                 onClick={() => setIsAddOpen(false)}
-                className="rounded-md border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800"
+                className="rounded-xl border border-slate-700 bg-transparent px-5 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-all"
               >
-                Cancel
+                Hủy bỏ
               </button>
-              <button onClick={handleSave} className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700">
-                {disasterStore?.createZoneLoading || disasterStore?.updateZoneLoading ? "Processing" : "Save"}
+              <button onClick={handleSave} className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-900/20 hover:bg-indigo-700 transition-all">
+                {disasterStore?.createZoneLoading || disasterStore?.updateZoneLoading ? "Đang xử lý..." : "Tạo Khu Vực"}
               </button>
             </>
           }
         >
-          {/* Simple form fields */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-slate-300">Tên</label>
-              <input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-300">Loại thảm họa</label>
-              <select
-                value={form.disasterType}
-                onChange={(e) => setForm({ ...form, disasterType: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              >
-                {typeOptions.filter(Boolean).map((opt) => (
-                  <option key={opt} value={opt} className="bg-slate-900">
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-slate-300">Mức độ nguy hiểm</label>
-              <select
-                value={form.dangerLevel}
-                onChange={(e) => setForm({ ...form, dangerLevel: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              >
-                {dangerOptions.filter(Boolean).map((opt) => (
-                  <option key={opt} value={opt} className="bg-slate-900">
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-slate-300">Kinh độ</label>
-              <input
-                value={form.centerLatitude}
-                onChange={(e) => setForm({ ...form, centerLatitude: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-300">Vĩ độ</label>
-              <input
-                value={form.centerLongitude}
-                onChange={(e) => setForm({ ...form, centerLongitude: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-300">Bán kính (km)</label>
-              <input
-                value={form.radius}
-                onChange={(e) => setForm({ ...form, radius: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              />
-            </div>
+          {/* LAYOUT 2 CỘT: MAP (TRÁI) - FORM (PHẢI) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+             
+             {/* 1. CỘT TRÁI: BẢN ĐỒ */}
+             <div className="flex flex-col h-full min-h-[350px]">
+                <label className="mb-2 text-sm font-medium text-slate-300 flex items-center gap-2">
+                   <Crosshair className="h-4 w-4 text-indigo-400" /> Vị trí & Phạm vi
+                </label>
+                <SmartLocationPicker 
+                    lat={parseFloat(form.centerLatitude)} 
+                    lng={parseFloat(form.centerLongitude)} 
+                    radius={form.radius}
+                    dangerLevel={form.dangerLevel}
+                    onLocationChange={handleLocationChange} 
+                />
+             </div>
+
+             {/* 2. CỘT PHẢI: FORM NHẬP LIỆU (ĐƯỢC VIẾT TRỰC TIẾP TẠI ĐÂY) */}
+             <div className="space-y-5">
+                {/* Tên Khu vực */}
+                <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Tên Khu vực</label>
+                    <input 
+                      value={form.name} 
+                      onChange={(e) => setForm({ ...form, name: e.target.value })} 
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all" 
+                      placeholder="VD: Vùng ngập lụt xã Nam Phương Tiến" 
+                    />
+                </div>
+
+                {/* Loại & Mức độ */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Loại thảm họa</label>
+                        <select value={form.disasterType} onChange={(e) => setForm({ ...form, disasterType: e.target.value })} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-white outline-none focus:border-indigo-500 transition-all appearance-none">
+                            {typeOptions.filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Mức độ rủi ro</label>
+                        <select value={form.dangerLevel} onChange={(e) => setForm({ ...form, dangerLevel: e.target.value })} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-white outline-none focus:border-indigo-500 transition-all appearance-none">
+                            {dangerOptions.filter(Boolean).map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                    </div>
+                </div>
+
+                {/* Slider Bán kính */}
+                <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/50">
+                    <label className="flex justify-between text-sm font-medium text-slate-300 mb-3">
+                        <span>Bán kính ảnh hưởng</span>
+                        <span className="text-indigo-400 font-mono font-bold">{form.radius} km</span>
+                    </label>
+                    <input 
+                        type="range" min="0.5" max="100" step="0.5" 
+                        value={form.radius} 
+                        onChange={(e) => setForm({ ...form, radius: e.target.value })}
+                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
+                    />
+                </div>
+
+                {/* Input Tọa độ (Cho phép nhập tay) */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-medium text-slate-400 mb-1.5">Vĩ độ (Lat)</label>
+                        <input 
+                            type="number" step="any" 
+                            value={form.centerLatitude} 
+                            onChange={(e) => setForm({ ...form, centerLatitude: e.target.value })}
+                            placeholder="VD: 21.028..."
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all font-mono"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-slate-400 mb-1.5">Kinh độ (Lng)</label>
+                        <input 
+                            type="number" step="any" 
+                            value={form.centerLongitude} 
+                            onChange={(e) => setForm({ ...form, centerLongitude: e.target.value })}
+                            placeholder="VD: 105.85..."
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all font-mono"
+                        />
+                    </div>
+                </div>
+                <p className="text-[10px] text-slate-500 italic">*Mẹo: Nhập tọa độ hoặc kéo marker trên bản đồ để cập nhật vị trí.</p>
+             </div>
           </div>
         </Modal>
       )}
+      {/* --- [KẾT THÚC SỬA ĐỔI] --- */}
 
-      {/* Edit Zone Modal */}
       {isEditOpen && (
         <Modal
-          title="Edit Zone"
+          title="Chỉnh sửa Khu vực"
           onClose={() => setIsEditOpen(false)}
           footer={
             <>
               <button
                 onClick={() => setIsEditOpen(false)}
-                className="rounded-md border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800"
+                className="rounded-xl border border-slate-700 bg-transparent px-5 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-all"
               >
                 Hủy
               </button>
               <RestrictedButton
                 onClick={handleUpdate}
-                className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700"
+                className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-900/20 hover:bg-indigo-700 transition-all"
               >
                 Cập nhật
               </RestrictedButton>
             </>
           }
         >
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-slate-300">Tên</label>
-              <input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-300">Loại thảm họa</label>
-              <select
-                value={form.disasterType}
-                onChange={(e) => setForm({ ...form, disasterType: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              >
-                {typeOptions.filter(Boolean).map((opt) => (
-                  <option key={opt} value={opt} className="bg-slate-900">
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-slate-300">Mức độ nguy hiểm</label>
-              <select
-                value={form.dangerLevel}
-                onChange={(e) => setForm({ ...form, dangerLevel: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              >
-                {dangerOptions.filter(Boolean).map((opt) => (
-                  <option key={opt} value={opt} className="bg-slate-900">
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-slate-300">Kinh độ</label>
-              <input
-                value={form.centerLatitude}
-                onChange={(e) => setForm({ ...form, centerLatitude: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-300">Vĩ độ</label>
-              <input
-                value={form.centerLongitude}
-                onChange={(e) => setForm({ ...form, centerLongitude: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-300">Bán kính (km)</label>
-              <input
-                value={form.radius}
-                onChange={(e) => setForm({ ...form, radius: e.target.value })}
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-              />
-            </div>
+          {/* NỘI DUNG FORM EDIT (Giống hệt Add Modal để đồng bộ) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+             <div className="flex flex-col h-full min-h-[350px]">
+                <label className="mb-2 text-sm font-medium text-slate-300 flex items-center gap-2">
+                   <Crosshair className="h-4 w-4 text-indigo-400" /> Vị trí & Phạm vi
+                </label>
+                <SmartLocationPicker 
+                    lat={parseFloat(form.centerLatitude)} 
+                    lng={parseFloat(form.centerLongitude)} 
+                    radius={form.radius}
+                    dangerLevel={form.dangerLevel}
+                    onLocationChange={handleLocationChange} 
+                />
+             </div>
+             <div className="space-y-5">
+                <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1.5">Tên Khu vực</label>
+                    <input 
+                      value={form.name} 
+                      onChange={(e) => setForm({ ...form, name: e.target.value })} 
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all" 
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Loại thảm họa</label>
+                        <select value={form.disasterType} onChange={(e) => setForm({ ...form, disasterType: e.target.value })} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-white outline-none focus:border-indigo-500 transition-all appearance-none">
+                            {typeOptions.filter(Boolean).map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Mức độ rủi ro</label>
+                        <select value={form.dangerLevel} onChange={(e) => setForm({ ...form, dangerLevel: e.target.value })} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-white outline-none focus:border-indigo-500 transition-all appearance-none">
+                            {dangerOptions.filter(Boolean).map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                    </div>
+                </div>
+                <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/50">
+                    <label className="flex justify-between text-sm font-medium text-slate-300 mb-3">
+                        <span>Bán kính ảnh hưởng</span>
+                        <span className="text-indigo-400 font-mono font-bold">{form.radius} km</span>
+                    </label>
+                    <input 
+                        type="range" min="0.5" max="100" step="0.5" 
+                        value={form.radius} 
+                        onChange={(e) => setForm({ ...form, radius: e.target.value })}
+                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-medium text-slate-400 mb-1.5">Vĩ độ (Lat)</label>
+                        <input 
+                            type="number" step="any" 
+                            value={form.centerLatitude} 
+                            onChange={(e) => setForm({ ...form, centerLatitude: e.target.value })}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all font-mono"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-slate-400 mb-1.5">Kinh độ (Lng)</label>
+                        <input 
+                            type="number" step="any" 
+                            value={form.centerLongitude} 
+                            onChange={(e) => setForm({ ...form, centerLongitude: e.target.value })}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all font-mono"
+                        />
+                    </div>
+                </div>
+             </div>
           </div>
         </Modal>
       )}
+      {/* --- [KẾT THÚC SỬA ĐỔI] --- */}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal (Giữ nguyên) */}
       {isDeleteOpen && (
         <Modal
-          title="Delete Zone"
+          title="Xác nhận Xóa"
           onClose={() => setIsDeleteOpen(false)}
           footer={
             <>
