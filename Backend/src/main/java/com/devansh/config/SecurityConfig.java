@@ -37,11 +37,12 @@ public class SecurityConfig {
     public SecurityFilterChain configure(HttpSecurity http) throws Exception {
 
         http
-                // 1. Tắt CSRF vì bạn đang sử dụng API Stateless (JWT)
-                .csrf(CsrfConfigurer::disable)
-                
-                // 2. Kích hoạt CORS ngay từ đầu để nó sử dụng bean corsConfiguration đã tiêm vào
+                // 1. Kích hoạt CORS ngay từ đầu để nó sử dụng bean corsConfiguration đã tiêm vào
+                // Put .cors(...) FIRST as requested
                 .cors(c -> c.configurationSource(corsConfiguration))
+                
+                // 2. Tắt CSRF
+                .csrf(CsrfConfigurer::disable)
                 
                 .authorizeHttpRequests(
                         authorize -> authorize
