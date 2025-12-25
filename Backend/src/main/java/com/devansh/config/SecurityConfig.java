@@ -36,24 +36,29 @@ public class SecurityConfig {
     public SecurityFilterChain configure(HttpSecurity http) throws Exception {
 
         http
-                .csrf(CsrfConfigurer::disable)
-                .authorizeHttpRequests(
-                        authorize -> authorize
-                                .requestMatchers("/auth/**")
-                                .permitAll()
+                .csrf(CsrfConfigurer::disable) // Tắt CSRF để cho phép Seeder/Postman gọi API
+                .authorizeHttpRequests(authorize -> authorize
+                        // 1. Cho phép truy cập tự do vào Auth (Login/Signup)
+                        .requestMatchers("/auth/**").permitAll()
+                        
+                        // 2. [QUAN TRỌNG] Cho phép truy cập API SOS để Seeder nạp dữ liệu
+                        // Sau khi nạp xong, bạn có thể comment dòng này lại để bảo mật
+                        .requestMatchers("/sos/**").permitAll() 
+                        .requestMatchers("/zones/**").permitAll() 
 
-                                .requestMatchers("/admin/**").hasRole(Role.ADMIN.name())
+                        // 3. Cấu hình quyền Admin
+                        // Lưu ý: Dùng hasAuthority an toàn hơn hasRole nếu DB lưu "ADMIN" thay vì "ROLE_ADMIN"
+                        .requestMatchers("/admin/**").hasAuthority(Role.ADMIN.name())
 
-                                .anyRequest()
-                                .authenticated()
-
+                        // 4. Các request còn lại bắt buộc phải có Token
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .logout(httpSecurityLogoutConfigurer ->
-                        httpSecurityLogoutConfigurer.logoutUrl("/auth/logout")
+                .logout(logout ->
+                        logout.logoutUrl("/auth/logout")
                                 .addLogoutHandler(logoutHandler)
                                 .logoutSuccessHandler((request, response, authentication) ->
                                         SecurityContextHolder.clearContext()
@@ -62,7 +67,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
 }
 
 
