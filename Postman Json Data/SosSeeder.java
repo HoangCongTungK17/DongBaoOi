@@ -4,58 +4,45 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Random;
 
 public class SosSeeder {
-
-    private static final String REGISTER_URL = "http://localhost:8080/auth/register";
+    private static final String LOGIN_URL = "http://localhost:8080/auth/login"; // Chuyển sang login
     private static final String SOS_URL = "http://localhost:8080/sos";
 
     public static void main(String[] args) throws Exception {
-        // Load the JSON file containing all SOS requests
         String jsonArray = Files.readString(Paths.get("sos_data.json")).trim();
-
-        // Remove [ ] from the JSON array
         if (jsonArray.startsWith("[")) jsonArray = jsonArray.substring(1);
         if (jsonArray.endsWith("]")) jsonArray = jsonArray.substring(0, jsonArray.length() - 1);
-
-        // Split each SOS object (simple split, assumes no nested objects with "},")
         String[] sosRequests = jsonArray.split("\\},\\s*\\{");
 
-        int userIndex = 1;
+        // TỐI ƯU: Danh sách người dùng đã có sẵn trong hệ thống
+        String[] testEmails = {"admin@dongbaooi.com", "user1@gmail.com", "user2@gmail.com"};
+        Random random = new Random();
 
         for (String sos : sosRequests) {
-            // Fix JSON object brackets
             if (!sos.startsWith("{")) sos = "{" + sos;
             if (!sos.endsWith("}")) sos = sos + "}";
 
-            // 1️⃣ Register a new user with unique fullname and email
-            String fullname = "User" + userIndex;
-            String email = "user" + userIndex + "@gmail.com";
-            String password = "123";
+            // TỐI ƯU: Chọn ngẫu nhiên một người dùng để gửi SOS
+            String email = testEmails[random.nextInt(testEmails.length)];
+            String loginJson = String.format("{\"email\":\"%s\",\"password\":\"123\"}", email);
 
-            String registerJson = String.format(
-                    "{\"fullname\":\"%s\",\"username\":\"%s\",\"email\":\"%s\",\"password\":\"%s\"}",
-                    fullname, fullname, email, password
-            );
-
-            String registerResponse = sendPost(REGISTER_URL, registerJson, null);
-            if (registerResponse == null || !registerResponse.contains("accessToken")) {
-                System.out.println("❌ Failed to register " + fullname);
+            // Đăng nhập để lấy token
+            String loginResponse = sendPost(LOGIN_URL, loginJson, null);
+            if (loginResponse == null || !loginResponse.contains("accessToken")) {
+                System.out.println("❌ Không thể đăng nhập cho: " + email);
                 continue;
             }
 
-            // Extract JWT token from response
-            String token = extractToken(registerResponse);
-            System.out.println("✅ Registered " + fullname + " got token: " + token);
+            String token = extractToken(loginResponse);
+            System.out.println("✅ " + email + " đã sẵn sàng. Đang gửi SOS...");
 
-            // 2️⃣ Send SOS request
+            // Gửi yêu cầu SOS
             String sosResponse = sendPost(SOS_URL, sos, token);
-            System.out.println("📩 SOS response: " + sosResponse);
-
-            userIndex++;
+            System.out.println("📩 Kết quả: " + sosResponse);
         }
-
-        System.out.println("✅ All requests processed.");
+        System.out.println("✅ Đã hoàn tất nạp dữ liệu mẫu.");
     }
 
     private static String sendPost(String urlStr, String jsonBody, String token) {

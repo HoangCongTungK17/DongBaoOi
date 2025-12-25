@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "react-leaflet-cluster": "^4.0.0",
+    "vite-plugin-pwa": "^1.2.0"
+  }
+}

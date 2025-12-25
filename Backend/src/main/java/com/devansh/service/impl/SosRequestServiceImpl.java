@@ -13,6 +13,8 @@ import com.devansh.service.DisasterZoneService;
 import com.devansh.service.SosRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page; 
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -108,21 +110,21 @@ public class SosRequestServiceImpl implements SosRequestService {
     // admin only
 
     @Override
-    public List<SosRequestDto> getFilteredRequests(SosStatus status, Integer zoneId) {
-        List<SosRequest> sosRequests;
+    public Page<SosRequestDto> getFilteredRequests(SosStatus status, Integer zoneId, Pageable pageable) {
+        Page<SosRequest> sosRequestsPage;
+
         if (zoneId != null && status != null) {
-            sosRequests = sosRepository.findByDisasterZoneIdAndStatus(zoneId, status);
+            sosRequestsPage = sosRepository.findByDisasterZoneIdAndStatus(zoneId, status, pageable);
         } else if (zoneId != null) {
-            sosRequests = sosRepository.findByDisasterZoneId(zoneId);
+            sosRequestsPage = sosRepository.findByDisasterZoneId(zoneId, pageable);
         } else if (status != null) {
-            sosRequests = sosRepository.findByStatus(status);
+            sosRequestsPage = sosRepository.findByStatus(status, pageable);
         } else {
-            sosRequests = sosRepository.findAll();
+            sosRequestsPage = sosRepository.findAll(pageable);
         }
 
-        return sosRequests.stream()
-                .map(sosRequestMapper::requestToSosRequestDto)
-                .collect(Collectors.toList());
+        // Chuyển đổi từ Page<Entity> sang Page<Dto>
+        return sosRequestsPage.map(sosRequestMapper::requestToSosRequestDto);
     }
 
     @Override

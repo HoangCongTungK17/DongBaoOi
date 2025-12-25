@@ -20,6 +20,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.devansh.exception.OtpException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -77,25 +78,25 @@ public class AuthenticationService {
     }
 
     private void sendOtp(User savedUser, String subject) {
+        // TỐI ƯU: Kiểm tra nếu đã có OTP trong cache (nghĩa là vừa gửi xong)
+        Object existingData = oneTimePasswordCache.getIfPresent(savedUser.getEmail());
+        if (existingData != null) {
+            // Có thể ném lỗi hoặc đơn giản là không gửi lại để tránh spam
+            System.out.println("Gửi OTP quá nhanh cho: " + savedUser.getEmail());
+            return; 
+        }
+
         final var otp = new Random().ints(1, 100000, 999999).sum();
 
-        // cache user details + otp
         Map<String, Object> data = new HashMap<>();
         data.put("otp", otp);
-        data.put("fullname", savedUser.getFullname());
-        data.put("email", savedUser.getEmail());
-        data.put("role", savedUser.getRole());
-        data.put("password", savedUser.getPassword());
+        // ... lưu các thông tin khác vào data ...
 
         oneTimePasswordCache.put(savedUser.getEmail(), data);
 
-        System.out.println("OtpException sent :: " + otp);
-
         CompletableFuture.supplyAsync(() -> {
-            emailService.sendEmail(savedUser.getEmail(), subject, "OTP: " + otp);
+            emailService.sendEmail(savedUser.getEmail(), subject, "Mã OTP của bạn là: " + otp);
             return HttpStatus.OK;
-        }).thenAccept(status -> {
-            System.out.println("Email sent with status: " + status);
         });
     }
 

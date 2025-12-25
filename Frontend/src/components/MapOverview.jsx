@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Fix default marker icon paths for Leaflet when bundling
 function useLeafletDefaultIcon() {
   useEffect(() => {
     delete L.Icon.Default.prototype._getIconUrl;
@@ -15,66 +15,61 @@ function useLeafletDefaultIcon() {
   }, []);
 }
 
-const statusBadgeClass = (status) => {
-  const map = {
-    HIGH: "bg-red-100 text-red-800 ring-red-200",
-    MEDIUM: "bg-yellow-100 text-yellow-800 ring-yellow-200",
-    LOW: "bg-green-100 text-green-800 ring-green-200",
-  };
-  return `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${
-    map[status] || "bg-gray-100 text-gray-800 ring-gray-200"
-  }`;
-};
-
-function getCircleStyle(dangerLevel) {
-  const styles = {
-    HIGH: { color: "#ef4444", fillColor: "#ef4444", fillOpacity: 0.4 },
-    MEDIUM: { color: "#f59e0b", fillColor: "#f59e0b", fillOpacity: 0.3 },
-    LOW: { color: "#10b981", fillColor: "#10b981", fillOpacity: 0.2 },
-  };
-  return styles[dangerLevel] || { color: "#64748b", fillColor: "#64748b", fillOpacity: 0.2 };
-}
-
-function MapOverview({ zones = [] }) {
+const MapOverview = ({ zones = [], sosRequests = [] }) => {
   useLeafletDefaultIcon();
-  const hasZones = Array.isArray(zones) && zones.length > 0;
+
+  // TỐI ƯU: Tránh treo trang khi dữ liệu chưa tải xong
+  if (!zones && !sosRequests) {
+    return <div className="mt-3 h-[32rem] flex items-center justify-center bg-slate-900 text-slate-400 rounded-xl">Đang khởi tạo bản đồ...</div>;
+  }
 
   return (
-    <div className="w-full rounded-2xl shadow-lg border border-slate-800 bg-slate-900 p-4">
-      <div className="mb-1">
-        <h3 className="text-sm font-semibold text-slate-100">Tổng quan bản đồ</h3>
-        <p className="text-xs text-slate-400">Phân bố địa lý của các khu vực thảm họa ở Việt Nam</p>
-      </div>
+    <div className="mt-3 h-[32rem] w-full overflow-hidden rounded-xl border border-slate-800">
+      <MapContainer 
+        center={[14.0583, 108.2772]} 
+        zoom={6} 
+        scrollWheelZoom={false} 
+        className="h-full w-full"
+      >
+        <TileLayer
+          attribution="&copy; OpenStreetMap"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
-      {!hasZones ? (
-        <div className="mt-3 h-[32rem] w-full rounded-xl bg-slate-800 grid place-items-center text-slate-400">Không có khu vực nào</div>
-      ) : (
-        <div className="mt-3 h-[32rem] w-full overflow-hidden rounded-xl">
-          <MapContainer center={[14.0583, 108.2772]} zoom={7} scrollWheelZoom={false} className="h-full w-full">
-            <TileLayer
-              attribution="&copy; OpenStreetMap contributors"
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              subdomains={["a", "b", "c"]}
-            />
-            {zones.map((z) => (
-              <Marker key={z.id} position={[z.centerLatitude, z.centerLongitude]}>
+        {/* CHÚ Ý: Tất cả các điểm Marker phải nằm bên trong MarkerClusterGroup */}
+        <MarkerClusterGroup chunkedLoading>
+          {/* Vẽ các vùng thiên tai */}
+          {zones && zones.map((z) => (
+            <React.Fragment key={`zone-${z.id}`}>
+              <Marker position={[z.centerLatitude, z.centerLongitude]}>
                 <Popup>
-                  <div className="space-y-1">
-                    <div className="text-sm font-semibold text-slate-900">{z.name}</div>
-                    <div className="text-xs text-slate-700">Type: {z.disasterType || "Unknown"}</div>
-                    <div className="text-xs">
-                      Nguy hiểm: <span className={statusBadgeClass(z.dangerLevel)}>{z.dangerLevel || "Unknown"}</span>
-                    </div>
-                  </div>
+                  <div className="font-bold text-slate-900">{z.name}</div>
+                  <div className="text-xs">Nguy hiểm: {z.dangerLevel}</div>
                 </Popup>
-                <Circle center={[z.centerLatitude, z.centerLongitude]} radius={(z.radius || 0) * 1000} pathOptions={getCircleStyle(z.dangerLevel)} />
               </Marker>
-            ))}
-          </MapContainer>
-        </div>
-      )}
+              <Circle 
+                center={[z.centerLatitude, z.centerLongitude]} 
+                radius={(z.radius || 0) * 1000} 
+                pathOptions={{ color: z.dangerLevel === 'HIGH' ? 'red' : 'orange' }} 
+              />
+            </React.Fragment>
+          ))}
+
+          {/* Vẽ các yêu cầu SOS */}
+          {sosRequests && sosRequests.map((sos) => (
+            <Marker 
+              key={`sos-${sos.id}`} 
+              position={[sos.latitude, sos.longitude]}
+            >
+              <Popup>
+                <div className="font-bold text-red-600">SOS: {sos.message || "Cần cứu trợ!"}</div>
+              </Popup>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
+      </MapContainer>
     </div>
   );
-}
+};
 
 export default MapOverview;

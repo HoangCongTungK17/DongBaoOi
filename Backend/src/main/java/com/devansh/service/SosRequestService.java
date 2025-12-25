@@ -5,6 +5,8 @@ import com.devansh.model.enums.SosStatus;
 import com.devansh.request.CreateSosRequest;
 import com.devansh.response.MessageResponse;
 import com.devansh.response.SosRequestDto;
+import org.springframework.data.domain.Page; 
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -16,6 +18,6 @@ public interface SosRequestService {
     MessageResponse deletePendingSosRequest(Integer sosRequestId, User user);
 
     // admin only
-    List<SosRequestDto> getFilteredRequests(SosStatus sosStatus, Integer zoneId);
+    Page<SosRequestDto> getFilteredRequests(SosStatus status, Integer zoneId, Pageable pageable);
     SosRequestDto updateSosStatus(Integer sosRequestId, SosStatus status);
 }

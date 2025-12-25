@@ -14,6 +14,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @Entity
+@Table(name = "sos_request", indexes = {
+    @Index(name = "idx_sos_coords", columnList = "latitude, longitude")
+})
 public class SosRequest {
 
     @Id

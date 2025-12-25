@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page; 
+import org.springframework.data.domain.Pageable; 
 
 import java.util.List;
 
@@ -54,9 +56,11 @@ public class SosRequestController {
     // admin only
 
     @GetMapping("/sos/all")
-    public ResponseEntity<List<SosRequestDto>> getAllSosRequests(@RequestParam(required = false) SosStatus status,
-                                                                 @RequestParam(required = false) Integer zoneId) throws UserException {
-        return ResponseEntity.ok(sosRequestService.getFilteredRequests(status, zoneId));
+    public ResponseEntity<Page<SosRequestDto>> getAllSosRequests(
+            @RequestParam(required = false) SosStatus status,
+            @RequestParam(required = false) Integer zoneId,
+            Pageable pageable) throws UserException {
+        return ResponseEntity.ok(sosRequestService.getFilteredRequests(status, zoneId, pageable));
     }
 
     @PutMapping("/admin/sos/{sosId}/status")
