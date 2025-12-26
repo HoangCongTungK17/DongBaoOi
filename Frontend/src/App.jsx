@@ -14,6 +14,7 @@ import ProfilePage from "./pages/ProfilePage.jsx";
 import ReportPage from "./pages/ReportPage.jsx";
 import ContactsPage from "./pages/ContactsPage.jsx";
 import UsersManagementPage from "./pages/admin/UsersManagementPage.jsx";
+import ChatBot from "./components/ChatBot.jsx";
 
 function App() {
   const { isAuthenticated, accessToken } = useSelector((store) => store.authStore);
@@ -43,6 +44,7 @@ function App() {
             <Route path="/contacts" element={<ContactsPage />} />
             <Route path="/admin/users" element={<UsersManagementPage />} />
           </Routes>
+          <ChatBot />
         </div>
       )}
     </>

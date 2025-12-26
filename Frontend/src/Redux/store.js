@@ -7,6 +7,7 @@ import { sosReducer } from "./SOS/Reducer.js";
 import { safetyTipReducer } from "./SafetyTips/Reducer.js";
 import { adminReducer } from "./Admin/Reducer.js";
 import { notificationReducer } from "./Notification/Reducer.js";
+import { chatReducer } from "./Chat/Reducer.js";
 
 const rootReducer = combineReducers({
   authStore: authReducer,
@@ -16,6 +17,7 @@ const rootReducer = combineReducers({
   safetyTipsStore: safetyTipReducer,
   adminStore: adminReducer,
   notificationStore: notificationReducer,
+  chatStore: chatReducer,
 });
 
 export const store = legacy_createStore(rootReducer, applyMiddleware(thunk));
