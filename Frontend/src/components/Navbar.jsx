@@ -1,15 +1,16 @@
 import React, { useState } from "react";
-import { Menu, User, LogOut, ChevronDown, X } from "lucide-react";
+import { Menu, User, LogOut, ChevronDown, X, ShieldCheck } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LOGOUT } from "../Redux/Auth/ActionType";
 import { useDispatch, useSelector } from "react-redux";
+import NotificationBell from "./NotificationBell";
 
 function Navbar() {
   const [open, setOpen] = useState(false); // profile dropdown
   const [sidebar, setSidebar] = useState(false); // mobile sidebar
   const location = useLocation();
   const dispatch = useDispatch();
-  const { email } = useSelector((store) => store.authStore);
+  const { email, isAdmin } = useSelector((store) => store.authStore);
   const navigate = useNavigate();
 
   const linkBase = "block rounded-md px-3 py-2 text-sm font-medium";
@@ -39,16 +40,32 @@ function Navbar() {
               <Link to="/sos" className={`${linkBase} ${location.pathname.startsWith("/sos") ? active : "text-white/90 hover:bg-white/15"}`}>
                 Yêu cầu SOS
               </Link>
+              <Link to="/report" className={`${linkBase} ${location.pathname === "/report" ? active : "text-white/90 hover:bg-white/15"}`}>
+                Báo cáo
+              </Link>
+              <Link to="/contacts" className={`${linkBase} ${location.pathname === "/contacts" ? active : "text-white/90 hover:bg-white/15"}`}>
+                Liên hệ
+              </Link>
+              {isAdmin && (
+                <Link to="/admin/users" className={`${linkBase} flex items-center gap-1 ${location.pathname.startsWith("/admin") ? active : "text-white/90 hover:bg-white/15"}`}>
+                  <ShieldCheck className="h-4 w-4" />
+                  Admin
+                </Link>
+              )}
             </div>
           </div>
 
-          {/* Profile dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setOpen((v) => !v)}
-              className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm text-white shadow-sm ring-1 ring-white/20 hover:bg-white/15"
-            >
+          {/* Right side: Notification + Profile */}
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+
+            {/* Profile dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm text-white shadow-sm ring-1 ring-white/20 hover:bg-white/15"
+              >
               <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-blue-700 text-xs font-semibold">
                 {email[0]?.toUpperCase()}
               </span>
@@ -57,24 +74,25 @@ function Navbar() {
             </button>
 
             {open && (
-              <div className="absolute right-0 mt-2 w-40 origin-top-right rounded-lg border border-gray-200 bg-white py-1.5 shadow-lg">
-                <button
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                  onClick={() => {
-                    navigate("/profile");
-                    setOpen(false);
-                  }}
-                >
-                  <User className="h-4 w-4" /> Profile
-                </button>
-                <button
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                  onClick={() => dispatch({ type: LOGOUT })}
-                >
-                  <LogOut className="h-4 w-4" /> Logout
-                </button>
-              </div>
-            )}
+                <div className="absolute right-0 mt-2 w-40 origin-top-right rounded-lg border border-gray-200 bg-white py-1.5 shadow-lg">
+                  <button
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => {
+                      navigate("/profile");
+                      setOpen(false);
+                    }}
+                  >
+                    <User className="h-4 w-4" /> Profile
+                  </button>
+                  <button
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    onClick={() => dispatch({ type: LOGOUT })}
+                  >
+                    <LogOut className="h-4 w-4" /> Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -104,6 +122,18 @@ function Navbar() {
               <Link to="/sos" onClick={() => setSidebar(false)} className={`${linkBase} ${location.pathname.startsWith("/sos") ? active : inactive}`}>
                 Yêu cầu SOS
               </Link>
+              <Link to="/report" onClick={() => setSidebar(false)} className={`${linkBase} ${location.pathname === "/report" ? active : inactive}`}>
+                Báo cáo
+              </Link>
+              <Link to="/contacts" onClick={() => setSidebar(false)} className={`${linkBase} ${location.pathname === "/contacts" ? active : inactive}`}>
+                Liên hệ
+              </Link>
+              {isAdmin && (
+                <Link to="/admin/users" onClick={() => setSidebar(false)} className={`${linkBase} flex items-center gap-2 ${location.pathname.startsWith("/admin") ? active : inactive}`}>
+                  <ShieldCheck className="h-4 w-4" />
+                  Admin
+                </Link>
+              )}
             </nav>
           </div>
 

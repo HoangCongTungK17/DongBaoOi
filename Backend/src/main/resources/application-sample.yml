@@ -42,3 +42,10 @@ two:
     auth:
       otp:
         expiration-minutes: 5 # OTP valid for 5 minutes
+
+# Groq AI API Configuration
+groq:
+  api:
+    key: ${GROQ_API_KEY:your-groq-api-key-here} # Get from https://console.groq.com/keys
+    url: https://api.groq.com/openai/v1/chat/completions
+    model: llama-3.3-70b-versatile # or mixtral-8x7b-32768, gemma2-9b-it

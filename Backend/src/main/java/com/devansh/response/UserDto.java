@@ -3,6 +3,8 @@ package com.devansh.response;
 import com.devansh.model.enums.Role;
 import lombok.Builder;
 
+import java.time.LocalDateTime;
+
 @Builder
 public record UserDto(
         Integer id,
@@ -10,6 +12,7 @@ public record UserDto(
         String phoneNumber,
         String fullname,
         String address,
-        Role role
+        Role role,
+        LocalDateTime createdAt
 ) {
 }
