@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { getAllDisasterZones } from "../Redux/DisasterZone/Action";
 import { getEveryoneSos } from "../Redux/SOS/Action";
-import { getDashboardSummary, getDashboardStats } from "../Redux/Dashboard/Action";
+import { getDashboardSummay, getZoneActivity } from "../Redux/Dashboard/Action";
 
 // Màu sắc cho biểu đồ
 const COLORS = {
@@ -51,8 +51,8 @@ function ReportPage() {
   useEffect(() => {
     dispatch(getAllDisasterZones());
     dispatch(getEveryoneSos());
-    dispatch(getDashboardSummary());
-    dispatch(getDashboardStats(timeRange));
+    dispatch(getDashboardSummay());
+    dispatch(getZoneActivity());
   }, [dispatch, timeRange]);
 
   const zones = disasterStore?.allZones || [];
