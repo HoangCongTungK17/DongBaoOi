@@ -5,6 +5,8 @@ import { dashboardReducer } from "./Dashboard/Reducer.js";
 import { disasterReducer } from "./DisasterZone/Reducer.js";
 import { sosReducer } from "./SOS/Reducer.js";
 import { safetyTipReducer } from "./SafetyTips/Reducer.js";
+import { adminReducer } from "./Admin/Reducer.js";
+import { notificationReducer } from "./Notification/Reducer.js";
 
 const rootReducer = combineReducers({
   authStore: authReducer,
@@ -12,6 +14,8 @@ const rootReducer = combineReducers({
   disasterStore: disasterReducer,
   sosStore: sosReducer,
   safetyTipsStore: safetyTipReducer,
+  adminStore: adminReducer,
+  notificationStore: notificationReducer,
 });
 
 export const store = legacy_createStore(rootReducer, applyMiddleware(thunk));

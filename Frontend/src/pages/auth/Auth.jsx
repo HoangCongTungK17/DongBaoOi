@@ -3,9 +3,10 @@ import { Lock, User } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { register, login } from "../../Redux/Auth/Action";
 import { useNavigate } from "react-router-dom";
+import ForgotPassword from "./ForgotPassword";
 
 function Auth() {
-  // "login" | "register" | "admin"
+  // "login" | "register" | "admin" | "forgot"
   const [mode, setMode] = useState("login");
   const [userData, setUserData] = useState({
     fullname: "",
@@ -20,6 +21,12 @@ function Auth() {
   const isLogin = mode === "login";
   const isRegister = mode === "register";
   const isAdmin = mode === "admin";
+  const isForgot = mode === "forgot";
+
+  // Nếu đang ở mode forgot, hiển thị component ForgotPassword
+  if (isForgot) {
+    return <ForgotPassword onBackToLogin={() => setMode("login")} />;
+  }
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -144,6 +151,10 @@ function Auth() {
         <div className="mt-4 text-center text-sm text-slate-400 space-y-2">
           {isLogin && (
             <>
+              <button type="button" onClick={() => setMode("forgot")} className="text-amber-400 hover:underline">
+                Quên mật khẩu?
+              </button>
+              <br />
               Bạn chưa có tài khoản?{" "}
               <button type="button" onClick={() => setMode("register")} className="text-blue-400 hover:underline">
                 Đăng ký

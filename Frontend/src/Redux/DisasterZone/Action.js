@@ -16,6 +16,7 @@ import {
   UPDATE_ZONE_REQUEST,
   UPDATE_ZONE_SUCCESS,
 } from "./ActionType.js";
+import { addNotification } from "../Notification/Action.js";
 
 export const getAllDisasterZones = () => async (dispatch) => {
   try {
@@ -79,6 +80,11 @@ export const createDisasterZone = (zoneData) => async (dispatch) => {
       type: CREATE_ZONE_SUCCESS,
       payload: resData,
     });
+    dispatch(addNotification({
+      type: "zone",
+      title: "New Disaster Zone Created",
+      message: `Zone "${resData.name}" has been added`,
+    }));
   } catch (error) {
     console.log("create new disaster zones (error): ", error);
     dispatch({ type: CREATE_ZONE_FAILURE, payload: "Something went wrong!" });

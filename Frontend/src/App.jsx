@@ -13,6 +13,7 @@ import { Toaster } from "sonner";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ReportPage from "./pages/ReportPage.jsx";
 import ContactsPage from "./pages/ContactsPage.jsx";
+import UsersManagementPage from "./pages/admin/UsersManagementPage.jsx";
 
 function App() {
   const { isAuthenticated, accessToken } = useSelector((store) => store.authStore);
@@ -40,6 +41,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/report" element={<ReportPage />} />
             <Route path="/contacts" element={<ContactsPage />} />
+            <Route path="/admin/users" element={<UsersManagementPage />} />
           </Routes>
         </div>
       )}
