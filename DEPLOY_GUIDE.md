@@ -82,10 +82,11 @@ SPRING_PROFILES_ACTIVE=prod
 ### Bước 4: Deploy
 1. Click **Create Web Service**
 2. Đợi 5-10 phút để build
-3. Copy URL backend: `https://disaster-pwa-backend.onrender.com`
-
-### Bước 5: Cập nhật Backend để chấp nhận CORS
-Cần cập nhật file application.yml để sử dụng biến môi trường.
+3. **Quan trọng**: Kiểm tra logs để đảm bảo không có lỗi:
+   - Click vào service → Tab **Logs**
+   - Tìm dòng: `Started Application in X.XXX seconds`
+   - Kiểm tra health: `curl https://your-app.onrender.com/actuator/health`
+4. Copy URL backend: `https://disaster-pwa-backend.onrender.com`
 
 ---
 
@@ -191,6 +192,12 @@ git push
 - Kiểm tra DB_URL, DB_USERNAME, DB_PASSWORD
 - Đảm bảo database đã tạo và đang chạy
 - Test kết nối từ local trước
+- **Database URL format phải đúng:**
+  ```
+  jdbc:mysql://[HOST]:[PORT]/[DATABASE]?useSSL=true&serverTimezone=UTC
+  ```
+- Với Railway: `useSSL=true` (bắt buộc)
+- Kiểm tra database cho phép kết nối từ IP của Render
 
 ### Frontend không gọi được API
 - Kiểm tra `VITE_API_BASE_URL` 
@@ -201,6 +208,20 @@ git push
 - Service sẽ sleep sau 15 phút không hoạt động
 - Request đầu tiên sẽ mất ~30s để wake up
 - Giải pháp: Upgrade lên paid plan hoặc dùng cron job ping
+
+### Build Backend failed (Exited with status 1)
+- **Kiểm tra Logs trên Render** để xem lỗi cụ thể
+- Lỗi thường gặp:
+  1. **Database connection failed**: Kiểm tra DB_URL, DB_USERNAME, DB_PASSWORD
+  2. **Port already in use**: Đảm bảo SERVER_PORT=8080
+  3. **Missing dependencies**: Commit lại pom.xml
+  4. **Environment variables missing**: Kiểm tra tất cả biến môi trường đã nhập
+- **Test local trước:**
+  ```bash
+  cd Backend
+  ./mvnw clean package -DskipTests
+  java -jar target/disaster_pwa.jar
+  ```
 
 ### Build frontend failed
 - Kiểm tra Node version (cần Node 18+)

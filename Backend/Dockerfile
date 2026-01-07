@@ -14,15 +14,18 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
 # Copy JAR from build stage
 COPY --from=build /app/target/*.jar app.jar
 
 # Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
-
-# Run application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run application with proper JVM settings for container
+ENTRYPOINT ["java", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-Dserver.port=${SERVER_PORT:-8080}", \
+    "-jar", \
+    "app.jar"]
