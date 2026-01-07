@@ -53,15 +53,16 @@
    - **Instance Type**: `Free`
 
 ### Bước 3: Thêm Environment Variables
-Click **Environment** và thêm các biến sau:
+Click **Environment** và thêm các biến sau (**QUAN TRỌNG**: Không được để trống bất kỳ biến nào!):
 
 ```
-DB_URL=jdbc:mysql://[HOST]:[PORT]/dongbaooi?useSSL=true&serverTimezone=UTC
+DB_URL=jdbc:mysql://[HOST]:[PORT]/[DATABASE]?useSSL=true&serverTimezone=UTC
 DB_USERNAME=[your_db_username]
 DB_PASSWORD=[your_db_password]
 
 JWT_SECRET=disaster-pwa-super-secret-key-2026-min-256-bits-for-security
 JWT_EXPIRATION=86400000
+JWT_REFRESH_EXPIRATION=604800000
 
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
@@ -72,6 +73,23 @@ SERVER_PORT=8080
 ALLOWED_ORIGINS=https://[your-app].vercel.app
 
 SPRING_PROFILES_ACTIVE=prod
+SHOW_SQL=false
+```
+
+**⚠️ LƯU Ý VỀ DATABASE URL:**
+
+Ví dụ với Railway:
+```
+# SAI - Thiếu database name
+DB_URL=jdbc:mysql://containers-us-west-145.railway.app:7892?useSSL=true
+
+# ĐÚNG - Có database name
+DB_URL=jdbc:mysql://containers-us-west-145.railway.app:7892/railway?useSSL=true&serverTimezone=UTC
+```
+
+Ví dụ với PlanetScale:
+```
+DB_URL=jdbc:mysql://aws.connect.psdb.cloud/dongbaooi?sslMode=VERIFY_IDENTITY&serverTimezone=UTC
 ```
 
 **Lưu ý Gmail App Password:**
@@ -192,16 +210,61 @@ git push
 - Kiểm tra `ALLOWED_ORIGINS` trên Render
 - Đảm bảo URL Vercel chính xác (có https://)
 
-### Backend không kết nối Database
-- Kiểm tra DB_URL, DB_USERNAME, DB_PASSWORD
-- Đảm bảo database đã tạo và đang chạy
-- Test kết nối từ local trước
-- **Database URL format phải đúng:**
-  ```
-  jdbc:mysql://[HOST]:[PORT]/[DATABASE]?useSSL=true&serverTimezone=UTC
-  ```
-- Với Railway: `useSSL=true` (bắt buộc)
-- Kiểm tra database cho phép kết nối từ IP của Render
+### Backend không kết nối Database / Hibernate Dialect Error
+
+**Lỗi: "Unable to determine Dialect without JDBC metadata"**
+
+Đây là lỗi phổ biến nhất khi deploy! Nguyên nhân:
+
+1. **Environment Variables chưa được set trên Render:**
+   - Vào Render Dashboard → Service → **Environment**
+   - Kiểm tra các biến: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
+   - **Không được để trống!**
+
+2. **Database URL sai format:**
+   ```bash
+   # ❌ SAI - Thiếu database name
+   jdbc:mysql://host:3306?useSSL=true
+   
+   # ✅ ĐÚNG - Có database name
+   jdbc:mysql://host:3306/railway?useSSL=true&serverTimezone=UTC
+   ```
+
+3. **Database chưa tạo hoặc chưa chạy:**
+   - Kiểm tra Railway/PlanetScale dashboard
+   - Đảm bảo database status = "Running"
+
+4. **Credentials sai:**
+   - Copy lại chính xác từ database dashboard
+   - Password thường rất dài và phức tạp
+
+5. **Database không cho phép kết nối external:**
+   - Railway/PlanetScale mặc định cho phép
+   - Nếu dùng service khác, check firewall rules
+
+**Cách kiểm tra từng bước:**
+
+```bash
+# Bước 1: Check logs trên Render
+Render Dashboard → Logs → Tìm "DB_URL"
+
+# Bước 2: Test connection từ local
+# Tạm thời thêm vào Backend/.env:
+DB_URL=jdbc:mysql://[HOST]:[PORT]/[DATABASE]?useSSL=true&serverTimezone=UTC
+DB_USERNAME=[username]
+DB_PASSWORD=[password]
+
+# Chạy local:
+cd Backend
+./mvnw spring-boot:run
+
+# Nếu local OK → Vấn đề ở Render environment variables
+# Nếu local FAIL → Vấn đề ở database connection
+```
+
+**Fix nhanh:**
+- Đảm bảo tất cả environment variables trên Render đã điền đầy đủ
+- Click **Manual Deploy** → **Deploy latest commit** để áp dụng thay đổi
 
 ### Frontend không gọi được API
 - Kiểm tra `VITE_API_BASE_URL` 

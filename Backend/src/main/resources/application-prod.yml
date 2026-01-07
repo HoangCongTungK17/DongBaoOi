@@ -1,17 +1,26 @@
 spring:
   datasource:
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:Datdo1611}
-    url: ${DB_URL:jdbc:mysql://localhost:3306/dongbaooi?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    url: ${DB_URL}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 20000
+      idle-timeout: 300000
+      leak-detection-threshold: 60000
 
   jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: update
-    show-sql: ${SHOW_SQL:false}
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
+        dialect: org.hibernate.dialect.MySQLDialect
+        jdbc:
+          time_zone: UTC
 
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
