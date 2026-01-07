@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { X } from "lucide-react";
 
 const statusStyles = {
   HANDLING: {
@@ -59,34 +60,83 @@ export function SOSTableRowCard({ location, message, status, time, onResolve }) 
   );
 }
 
-function SOSTableRow({ latitude, longitude, message, sosStatus, updatedAt, onResolve }) {
+function SOSTableRow({ latitude, longitude, message, sosStatus, disasterType, imageUrl, updatedAt, onResolve }) {
   const badgeClass = getStatusBadgeClass(sosStatus);
+  const [showImageModal, setShowImageModal] = useState(false);
+
   return (
-    <tr className="bg-slate-900 hover:bg-slate-800">
-      <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-200">{latitude}</td>
-      <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-200">{longitude}</td>
-      <td className="px-4 py-3 text-sm text-slate-300">{message}</td>
-      <td className="px-4 py-3 text-sm">
-        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${badgeClass}`}>
-          {sosStatus || "Unknown"}
-        </span>
-      </td>
-      <td className="whitespace-nowrap px-4 py-3 text-[13px] text-slate-400">
-        <div>
-          <p>{updatedAt.split("T")[0]}</p>
-          <p>{updatedAt.split("T")[1].split(".")[0]}</p>
-        </div>
-      </td>
-      {/* <td className="px-4 py-3 text-sm">
-        <button
-          type="button"
-          onClick={onResolve}
-          className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900"
-        >
-          Mark Resolved
-        </button>
-      </td> */}
-    </tr>
+    <>
+      <tr className="bg-slate-900 hover:bg-slate-800">
+        <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-200">{latitude}</td>
+        <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-200">{longitude}</td>
+        <td className="px-4 py-3 text-sm text-slate-300">{message}</td>
+        <td className="px-4 py-3 text-sm">
+          <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-purple-900/30 text-purple-300 ring-1 ring-purple-700/40">
+            {disasterType || "N/A"}
+          </span>
+        </td>
+        <td className="px-4 py-3 text-sm">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt="SOS"
+              className="h-12 w-12 object-cover rounded-lg border border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setShowImageModal(true)}
+            />
+          ) : (
+            <span className="text-slate-500 text-xs">Không có ảnh</span>
+          )}
+        </td>
+        <td className="px-4 py-3 text-sm">
+          <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${badgeClass}`}>
+            {sosStatus || "Unknown"}
+          </span>
+        </td>
+        <td className="whitespace-nowrap px-4 py-3 text-[13px] text-slate-400">
+          <div>
+            <p>{updatedAt.split("T")[0]}</p>
+            <p>{updatedAt.split("T")[1].split(".")[0]}</p>
+          </div>
+        </td>
+        {/* <td className="px-4 py-3 text-sm">
+          <button
+            type="button"
+            onClick={onResolve}
+            className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+          >
+            Mark Resolved
+          </button>
+        </td> */}
+      </tr>
+
+      {/* Image Modal */}
+      {showImageModal && imageUrl && (
+        <td colSpan="7" className="p-0">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setShowImageModal(false)}>
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
+
+            {/* Modal Content */}
+            <div className="relative max-w-5xl max-h-[90vh] animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+              {/* Close Button */}
+              <button
+                onClick={() => setShowImageModal(false)}
+                className="absolute -top-12 right-0 rounded-full bg-slate-900/80 p-2 text-white hover:bg-slate-800 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+
+              {/* Image */}
+              <img
+                src={imageUrl}
+                alt="SOS Request"
+                className="max-w-full max-h-[85vh] rounded-xl shadow-2xl border border-slate-700"
+              />
+            </div>
+          </div>
+        </td>
+      )}
+    </>
   );
 }
 

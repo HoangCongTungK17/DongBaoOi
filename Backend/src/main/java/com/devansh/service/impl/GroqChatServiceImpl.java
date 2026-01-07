@@ -38,7 +38,7 @@ public class GroqChatServiceImpl implements GroqChatService {
         NHIỆM VỤ CHÍNH:
         1. Hướng dẫn sơ tán và di chuyển an toàn khi có thảm họa
         2. Cung cấp hướng dẫn sơ cứu cơ bản
-        3. Tư vấn cách ứng phó với các loại thảm họa: lũ lụt, động đất, sạt lở, bão, cháy rừng, cháy nhà
+        3. Tư vấn cách ứng phó với các loại thảm họa: lũ lụt, động đất, sạt lở, bão, cháy rừng, hảo hoạn
         4. Cung cấp số điện thoại khẩn cấp và thông tin liên hệ cứu hộ
         5. Hướng dẫn chuẩn bị đồ dùng khẩn cấp và lên kế hoạch ứng phó
 

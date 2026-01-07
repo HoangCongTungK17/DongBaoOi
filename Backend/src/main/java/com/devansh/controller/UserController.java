@@ -1,8 +1,10 @@
 package com.devansh.controller;
 
 import com.devansh.exception.TokenInvalidException;
+import com.devansh.exception.UserAlreadyExistException;
 import com.devansh.exception.UserException;
 import com.devansh.request.ChangePasswordRequest;
+import com.devansh.request.CreateUserRequest;
 import com.devansh.request.UserUpdateRequest;
 import com.devansh.response.MessageResponse;
 import com.devansh.response.UserDto;
@@ -24,12 +26,14 @@ public class UserController {
     // ===== USER ENDPOINTS =====
 
     @GetMapping("/user")
-    public ResponseEntity<UserDto> getMyDetails(@RequestHeader("Authorization") String token) throws TokenInvalidException, UserException {
+    public ResponseEntity<UserDto> getMyDetails(@RequestHeader("Authorization") String token)
+            throws TokenInvalidException, UserException {
         return ResponseEntity.ok(userService.getMyDetails(token));
     }
 
     @PutMapping("/user")
-    public ResponseEntity<UserDto> updateMyDetails(@RequestHeader("Authorization") String token, @RequestBody UserUpdateRequest request) throws UserException, TokenInvalidException {
+    public ResponseEntity<UserDto> updateMyDetails(@RequestHeader("Authorization") String token,
+            @RequestBody UserUpdateRequest request) throws UserException, TokenInvalidException {
         return ResponseEntity.ok(userService.updateMyDetails(token, request));
     }
 
@@ -63,6 +67,30 @@ public class UserController {
     @GetMapping("/admin/users/count")
     public ResponseEntity<Map<String, Long>> getUsersCount() {
         return ResponseEntity.ok(Map.of("total", userService.getTotalUsersCount()));
+    }
+
+    @PostMapping("/admin/users")
+    public ResponseEntity<UserDto> createUser(@Valid @RequestBody CreateUserRequest request)
+            throws UserException, UserAlreadyExistException {
+        UserDto createdUser = userService.createUser(
+                request.fullname(),
+                request.email(),
+                request.phoneNumber(),
+                request.address(),
+                request.role());
+        return ResponseEntity.ok(createdUser);
+    }
+
+    @PutMapping("/admin/users/{userId}")
+    public ResponseEntity<UserDto> updateUser(
+            @PathVariable Integer userId,
+            @RequestBody UserUpdateRequest request) throws UserException {
+        return ResponseEntity.ok(userService.updateUser(userId, request));
+    }
+
+    @DeleteMapping("/admin/users/{userId}")
+    public ResponseEntity<MessageResponse> deleteUser(@PathVariable Integer userId) throws UserException {
+        return ResponseEntity.ok(userService.deleteUser(userId));
     }
 
 }

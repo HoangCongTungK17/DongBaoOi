@@ -40,9 +40,11 @@ function Navbar() {
               <Link to="/sos" className={`${linkBase} ${location.pathname.startsWith("/sos") ? active : "text-white/90 hover:bg-white/15"}`}>
                 Yêu cầu SOS
               </Link>
-              <Link to="/report" className={`${linkBase} ${location.pathname === "/report" ? active : "text-white/90 hover:bg-white/15"}`}>
-                Báo cáo
-              </Link>
+              {isAdmin && (
+                <Link to="/report" className={`${linkBase} ${location.pathname === "/report" ? active : "text-white/90 hover:bg-white/15"}`}>
+                  Báo cáo
+                </Link>
+              )}
               <Link to="/contacts" className={`${linkBase} ${location.pathname === "/contacts" ? active : "text-white/90 hover:bg-white/15"}`}>
                 Liên hệ
               </Link>
@@ -66,14 +68,14 @@ function Navbar() {
                 onClick={() => setOpen((v) => !v)}
                 className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm text-white shadow-sm ring-1 ring-white/20 hover:bg-white/15"
               >
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-blue-700 text-xs font-semibold">
-                {email[0]?.toUpperCase()}
-              </span>
-              <span className="hidden sm:inline">{email.split("@")[0].toUpperCase()}</span>
-              <ChevronDown className="h-4 w-4 text-white/90" />
-            </button>
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-blue-700 text-xs font-semibold">
+                  {email[0]?.toUpperCase()}
+                </span>
+                <span className="hidden sm:inline">{email.split("@")[0].toUpperCase()}</span>
+                <ChevronDown className="h-4 w-4 text-white/90" />
+              </button>
 
-            {open && (
+              {open && (
                 <div className="absolute right-0 mt-2 w-40 origin-top-right rounded-lg border border-gray-200 bg-white py-1.5 shadow-lg">
                   <button
                     className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -122,9 +124,11 @@ function Navbar() {
               <Link to="/sos" onClick={() => setSidebar(false)} className={`${linkBase} ${location.pathname.startsWith("/sos") ? active : inactive}`}>
                 Yêu cầu SOS
               </Link>
-              <Link to="/report" onClick={() => setSidebar(false)} className={`${linkBase} ${location.pathname === "/report" ? active : inactive}`}>
-                Báo cáo
-              </Link>
+              {isAdmin && (
+                <Link to="/report" onClick={() => setSidebar(false)} className={`${linkBase} ${location.pathname === "/report" ? active : inactive}`}>
+                  Báo cáo
+                </Link>
+              )}
               <Link to="/contacts" onClick={() => setSidebar(false)} className={`${linkBase} ${location.pathname === "/contacts" ? active : inactive}`}>
                 Liên hệ
               </Link>

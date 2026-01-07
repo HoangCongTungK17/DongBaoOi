@@ -5,6 +5,15 @@ import {
   UPDATE_USER_ROLE_REQUEST,
   UPDATE_USER_ROLE_SUCCESS,
   UPDATE_USER_ROLE_FAILURE,
+  CREATE_USER_REQUEST,
+  CREATE_USER_SUCCESS,
+  CREATE_USER_FAILURE,
+  UPDATE_USER_REQUEST,
+  UPDATE_USER_SUCCESS,
+  UPDATE_USER_FAILURE,
+  DELETE_USER_REQUEST,
+  DELETE_USER_SUCCESS,
+  DELETE_USER_FAILURE,
   CLEAR_ADMIN_ERROR,
 } from "./ActionType.js";
 
@@ -36,6 +45,45 @@ export const adminReducer = (state = initialState, action) => {
       };
     case UPDATE_USER_ROLE_FAILURE:
       return { ...state, updateLoading: false, error: action.payload };
+
+    // Create User
+    case CREATE_USER_REQUEST:
+      return { ...state, loading: true, error: null };
+    case CREATE_USER_SUCCESS:
+      return {
+        ...state,
+        users: [...state.users, action.payload],
+        loading: false,
+        error: null,
+      };
+    case CREATE_USER_FAILURE:
+      return { ...state, loading: false, error: action.payload };
+
+    // Update User  
+    case UPDATE_USER_REQUEST:
+      return { ...state, updateLoading: true, error: null };
+    case UPDATE_USER_SUCCESS:
+      return {
+        ...state,
+        users: state.users.map((u) => (u.id === action.payload.id ? action.payload : u)),
+        updateLoading: false,
+        error: null,
+      };
+    case UPDATE_USER_FAILURE:
+      return { ...state, updateLoading: false, error: action.payload };
+
+    // Delete User
+    case DELETE_USER_REQUEST:
+      return { ...state, loading: true, error: null };
+    case DELETE_USER_SUCCESS:
+      return {
+        ...state,
+        users: state.users.filter((u) => u.id !== action.payload),
+        loading: false,
+        error: null,
+      };
+    case DELETE_USER_FAILURE:
+      return { ...state, loading: false, error: action.payload };
 
     case CLEAR_ADMIN_ERROR:
       return { ...state, error: null };

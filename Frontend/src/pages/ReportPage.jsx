@@ -1,12 +1,35 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
-  PieChart, Pie, Legend, LineChart, Line, AreaChart, Area
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  PieChart,
+  Pie,
+  Legend,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
 } from "recharts";
 import {
-  TrendingUp, AlertTriangle, MapPin, Clock, Download, Filter,
-  ArrowUpRight, ArrowDownRight, Activity, Shield, Users, FileText
+  TrendingUp,
+  AlertTriangle,
+  MapPin,
+  Clock,
+  Download,
+  Filter,
+  ArrowUpRight,
+  ArrowDownRight,
+  Activity,
+  Shield,
+  Users,
+  FileText,
 } from "lucide-react";
 import { getAllDisasterZones } from "../Redux/DisasterZone/Action";
 import { getEveryoneSos } from "../Redux/SOS/Action";
@@ -34,7 +57,7 @@ const COLORS = {
     "TRIỀU CƯỜNG": "#1e40af",
     "CHÁY RỪNG": "#dc2626",
     "MƯA ĐÁ": "#06b6d4",
-    "CHÁY NHÀ": "#f97316",
+    "HỎA HOẠN": "#f97316",
     "KHÔNG XÁC ĐỊNH": "#94a3b8",
   },
 };
@@ -47,6 +70,7 @@ function ReportPage() {
   const disasterStore = useSelector((store) => store.disasterStore);
   const sosStore = useSelector((store) => store.sosStore);
   const dashboardStore = useSelector((store) => store.dashboardStore);
+  const { isAdmin } = useSelector((store) => store.authStore);
 
   useEffect(() => {
     dispatch(getAllDisasterZones());
@@ -55,10 +79,25 @@ function ReportPage() {
     dispatch(getZoneActivity());
   }, [dispatch, timeRange]);
 
+  // Kiểm tra quyền admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white">Truy cập bị từ chối</h2>
+          <p className="text-slate-400 mt-2">
+            Bạn không có quyền truy cập trang này. Chỉ admin mới có thể xem báo cáo.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const zones = disasterStore?.allZones || [];
   const allSos = sosStore?.allSos || [];
   const summary = dashboardStore?.dashboardSummary || {};
-  const stats = dashboardStore?.stats || {};
+  const stats = dashboardStore?.stats || [];
 
   // Tính toán thống kê SOS theo status
   const sosByStatus = useMemo(() => {
@@ -111,7 +150,10 @@ function ReportPage() {
       const date = new Date();
       date.setDate(date.getDate() - i);
       days.push({
-        date: date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
+        date: date.toLocaleDateString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+        }),
         sos: Math.floor(Math.random() * 20) + 5, // Mock data
         resolved: Math.floor(Math.random() * 15) + 3,
       });
@@ -134,7 +176,15 @@ function ReportPage() {
 
   // Export CSV
   const exportToCSV = () => {
-    const headers = ["ID", "Message", "Disaster Type", "Status", "Latitude", "Longitude", "Created At"];
+    const headers = [
+      "ID",
+      "Message",
+      "Disaster Type",
+      "Status",
+      "Latitude",
+      "Longitude",
+      "Created At",
+    ];
     const rows = allSos.map((s) => [
       s.id,
       `"${(s.message || "").replace(/"/g, '""')}"`,
@@ -145,23 +195,44 @@ function ReportPage() {
       s.createdAt || "",
     ]);
 
-    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((r) => r.join(",")),
+    ].join("\n");
+    const blob = new Blob(["\ufeff" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `sos_report_${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
   };
 
-  const StatCard = ({ title, value, icon: Icon, color, change, changeType }) => (
-    <div className={`bg-gradient-to-br ${color} border border-slate-700/50 rounded-xl p-5 hover:scale-[1.02] transition-all duration-300`}>
+  const StatCard = ({
+    title,
+    value,
+    icon: Icon,
+    color,
+    change,
+    changeType,
+  }) => (
+    <div
+      className={`bg-gradient-to-br ${color} border border-slate-700/50 rounded-xl p-5 hover:scale-[1.02] transition-all duration-300`}
+    >
       <div className="flex items-center justify-between">
         <div>
           <p className="text-slate-400 text-sm">{title}</p>
           <p className="text-3xl font-bold text-white mt-1">{value}</p>
           {change !== undefined && (
-            <div className={`flex items-center mt-2 text-xs ${changeType === "up" ? "text-green-400" : "text-red-400"}`}>
-              {changeType === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+            <div
+              className={`flex items-center mt-2 text-xs ${changeType === "up" ? "text-green-400" : "text-red-400"
+                }`}
+            >
+              {changeType === "up" ? (
+                <ArrowUpRight className="h-3 w-3" />
+              ) : (
+                <ArrowDownRight className="h-3 w-3" />
+              )}
               <span>{change}% so với tuần trước</span>
             </div>
           )}
@@ -183,7 +254,9 @@ function ReportPage() {
               <Activity className="h-8 w-8 text-indigo-400" />
               Báo cáo & Phân tích
             </h1>
-            <p className="text-slate-400 mt-1">Thống kê tổng quan hệ thống quản lý thảm họa</p>
+            <p className="text-slate-400 mt-1">
+              Thống kê tổng quan hệ thống quản lý thảm họa
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -193,11 +266,10 @@ function ReportPage() {
                 <button
                   key={days}
                   onClick={() => setTimeRange(days)}
-                  className={`px-3 py-1.5 text-sm rounded-md transition-all ${
-                    timeRange === days
-                      ? "bg-indigo-600 text-white"
-                      : "text-slate-400 hover:text-white"
-                  }`}
+                  className={`px-3 py-1.5 text-sm rounded-md transition-all ${timeRange === days
+                    ? "bg-indigo-600 text-white"
+                    : "text-slate-400 hover:text-white"
+                    }`}
                 >
                   {days} ngày
                 </button>
@@ -270,15 +342,24 @@ function ReportPage() {
                     outerRadius={80}
                     paddingAngle={5}
                     dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                     labelLine={false}
                   >
                     {sosByStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS.status[entry.name] || "#94a3b8"} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS.status[entry.name] || "#94a3b8"}
+                      />
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "8px" }}
+                    contentStyle={{
+                      background: "#1e293b",
+                      border: "1px solid #334155",
+                      borderRadius: "8px",
+                    }}
                     itemStyle={{ color: "#e2e8f0" }}
                   />
                   <Legend wrapperStyle={{ color: "#94a3b8" }} />
@@ -298,14 +379,26 @@ function ReportPage() {
                 <BarChart data={zonesByDanger} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis type="number" stroke="#94a3b8" />
-                  <YAxis dataKey="name" type="category" stroke="#94a3b8" width={80} />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    stroke="#94a3b8"
+                    width={80}
+                  />
                   <Tooltip
-                    contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "8px" }}
+                    contentStyle={{
+                      background: "#1e293b",
+                      border: "1px solid #334155",
+                      borderRadius: "8px",
+                    }}
                     itemStyle={{ color: "#e2e8f0" }}
                   />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                     {zonesByDanger.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS.danger[entry.name] || "#94a3b8"} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS.danger[entry.name] || "#94a3b8"}
+                      />
                     ))}
                   </Bar>
                 </BarChart>
@@ -330,7 +423,13 @@ function ReportPage() {
                       <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
                       <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient
+                      id="colorResolved"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                     </linearGradient>
@@ -339,12 +438,30 @@ function ReportPage() {
                   <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
                   <YAxis stroke="#94a3b8" fontSize={12} />
                   <Tooltip
-                    contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "8px" }}
+                    contentStyle={{
+                      background: "#1e293b",
+                      border: "1px solid #334155",
+                      borderRadius: "8px",
+                    }}
                     itemStyle={{ color: "#e2e8f0" }}
                   />
                   <Legend wrapperStyle={{ color: "#94a3b8" }} />
-                  <Area type="monotone" dataKey="sos" name="SOS mới" stroke="#ef4444" fillOpacity={1} fill="url(#colorSos)" />
-                  <Area type="monotone" dataKey="resolved" name="Đã xử lý" stroke="#10b981" fillOpacity={1} fill="url(#colorResolved)" />
+                  <Area
+                    type="monotone"
+                    dataKey="sos"
+                    name="SOS mới"
+                    stroke="#ef4444"
+                    fillOpacity={1}
+                    fill="url(#colorSos)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="resolved"
+                    name="Đã xử lý"
+                    stroke="#10b981"
+                    fillOpacity={1}
+                    fill="url(#colorResolved)"
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -361,19 +478,30 @@ function ReportPage() {
                 <p className="text-slate-400 text-sm">Chưa có dữ liệu</p>
               ) : (
                 topZonesBySos.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg"
+                  >
                     <div className="flex items-center gap-3">
-                      <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${
-                        idx === 0 ? "bg-yellow-500/20 text-yellow-400" :
-                        idx === 1 ? "bg-slate-400/20 text-slate-300" :
-                        idx === 2 ? "bg-amber-600/20 text-amber-400" :
-                        "bg-slate-700 text-slate-400"
-                      }`}>
+                      <span
+                        className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${idx === 0
+                          ? "bg-yellow-500/20 text-yellow-400"
+                          : idx === 1
+                            ? "bg-slate-400/20 text-slate-300"
+                            : idx === 2
+                              ? "bg-amber-600/20 text-amber-400"
+                              : "bg-slate-700 text-slate-400"
+                          }`}
+                      >
                         {idx + 1}
                       </span>
-                      <span className="text-slate-200 text-sm truncate max-w-[120px]">{item.zone}</span>
+                      <span className="text-slate-200 text-sm truncate max-w-[120px]">
+                        {item.zone}
+                      </span>
                     </div>
-                    <span className="text-indigo-400 font-semibold">{item.count}</span>
+                    <span className="text-indigo-400 font-semibold">
+                      {item.count}
+                    </span>
                   </div>
                 ))
               )}
@@ -391,15 +519,29 @@ function ReportPage() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={sosByDisasterType}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} angle={-15} textAnchor="end" height={60} />
+                <XAxis
+                  dataKey="name"
+                  stroke="#94a3b8"
+                  fontSize={11}
+                  angle={-15}
+                  textAnchor="end"
+                  height={60}
+                />
                 <YAxis stroke="#94a3b8" fontSize={12} />
                 <Tooltip
-                  contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "8px" }}
+                  contentStyle={{
+                    background: "#1e293b",
+                    border: "1px solid #334155",
+                    borderRadius: "8px",
+                  }}
                   itemStyle={{ color: "#e2e8f0" }}
                 />
                 <Bar dataKey="value" name="Số lượng" radius={[4, 4, 0, 0]}>
                   {sosByDisasterType.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS.disaster[entry.name] || "#94a3b8"} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS.disaster[entry.name] || "#94a3b8"}
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -411,9 +553,12 @@ function ReportPage() {
         <div className="bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border border-indigo-700/30 rounded-xl p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h3 className="text-lg font-semibold text-white">Tóm tắt báo cáo</h3>
+              <h3 className="text-lg font-semibold text-white">
+                Tóm tắt báo cáo
+              </h3>
               <p className="text-slate-400 text-sm mt-1">
-                Dữ liệu được cập nhật tự động. Xuất CSV để chia sẻ với các cơ quan chức năng.
+                Dữ liệu được cập nhật tự động. Xuất CSV để chia sẻ với các cơ
+                quan chức năng.
               </p>
             </div>
             <div className="flex items-center gap-6 text-sm">
@@ -421,8 +566,14 @@ function ReportPage() {
                 <p className="text-slate-400">Tỷ lệ xử lý</p>
                 <p className="text-2xl font-bold text-green-400">
                   {allSos.length > 0
-                    ? Math.round((allSos.filter((s) => s.sosStatus === "COMPLETED").length / allSos.length) * 100)
-                    : 0}%
+                    ? Math.round(
+                      (allSos.filter((s) => s.sosStatus === "COMPLETED")
+                        .length /
+                        allSos.length) *
+                      100
+                    )
+                    : 0}
+                  %
                 </p>
               </div>
               <div className="text-center">
@@ -431,7 +582,9 @@ function ReportPage() {
               </div>
               <div className="text-center">
                 <p className="text-slate-400">Khu vực đang hoạt động</p>
-                <p className="text-2xl font-bold text-blue-400">{zones.filter((z) => z.isActive !== false).length}</p>
+                <p className="text-2xl font-bold text-blue-400">
+                  {zones.filter((z) => z.isActive !== false).length}
+                </p>
               </div>
             </div>
           </div>

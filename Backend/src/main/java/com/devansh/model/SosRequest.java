@@ -27,13 +27,18 @@ public class SosRequest {
     private BigDecimal latitude;
     private BigDecimal longitude;
 
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+    @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Enumerated(EnumType.STRING)
     private SosStatus status;
     @Enumerated(EnumType.STRING)
     private DisasterType disasterType;
+
+    @Lob
+    private String imageUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "zone_id")

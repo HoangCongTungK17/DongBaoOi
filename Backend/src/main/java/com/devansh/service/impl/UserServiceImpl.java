@@ -2,6 +2,7 @@ package com.devansh.service.impl;
 
 import com.devansh.config.JwtService;
 import com.devansh.exception.TokenInvalidException;
+import com.devansh.exception.UserAlreadyExistException;
 import com.devansh.exception.UserException;
 import com.devansh.model.User;
 import com.devansh.model.enums.Role;
@@ -32,8 +33,7 @@ public class UserServiceImpl implements UserService {
         String email = jwtService.extractUsername(token);
         User user = userRepository
                 .findByEmail(email)
-                .orElseThrow(() ->
-                        new BadCredentialsException("User not found with email: " + email));
+                .orElseThrow(() -> new BadCredentialsException("User not found with email: " + email));
         return user;
     }
 
@@ -51,7 +51,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto updateMyDetails(String token, UserUpdateRequest request) throws UserException, TokenInvalidException {
+    public UserDto updateMyDetails(String token, UserUpdateRequest request)
+            throws UserException, TokenInvalidException {
         User user = findByJwtToken(token);
         if (request.address() != null) {
             user.setAddress(request.address());
@@ -74,7 +75,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public MessageResponse changePassword(String token, ChangePasswordRequest request) throws UserException, TokenInvalidException {
+    public MessageResponse changePassword(String token, ChangePasswordRequest request)
+            throws UserException, TokenInvalidException {
         User user = findByJwtToken(token);
 
         // Validate current password
@@ -135,6 +137,65 @@ public class UserServiceImpl implements UserService {
         return userRepository.count();
     }
 
+    @Override
+    public UserDto createUser(String fullname, String email, String phoneNumber, String address, String role)
+            throws UserException, UserAlreadyExistException {
+        // Check if email already exists
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new UserAlreadyExistException("Email already exists: " + email);
+        }
+
+        // Validate role
+        Role userRole;
+        try {
+            userRole = Role.valueOf(role.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new UserException("Invalid role: " + role);
+        }
+
+        // Create new user with default password "123456"
+        User newUser = new User();
+        newUser.setFullname(fullname);
+        newUser.setEmail(email);
+        newUser.setPhoneNumber(phoneNumber);
+        newUser.setAddress(address);
+        newUser.setRole(userRole);
+        newUser.setPassword(passwordEncoder.encode("123456")); // Default password
+
+        User savedUser = userRepository.save(newUser);
+        return mapToUserDto(savedUser);
+    }
+
+    @Override
+    public UserDto updateUser(Integer userId, UserUpdateRequest request) throws UserException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserException("User not found with ID: " + userId));
+
+        // Update fields
+        if (request.fullname() != null && !request.fullname().isEmpty()) {
+            user.setFullname(request.fullname());
+        }
+        if (request.phoneNumber() != null) {
+            user.setPhoneNumber(request.phoneNumber());
+        }
+        if (request.address() != null) {
+            user.setAddress(request.address());
+        }
+
+        User updatedUser = userRepository.save(user);
+        return mapToUserDto(updatedUser);
+    }
+
+    @Override
+    public MessageResponse deleteUser(Integer userId) throws UserException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserException("User not found with ID: " + userId));
+
+        // Delete the user
+        userRepository.delete(user);
+        return new MessageResponse("User deleted successfully");
+    }
+
     private UserDto mapToUserDto(User user) {
         return UserDto.builder()
                 .id(user.getId())
@@ -148,34 +209,3 @@ public class UserServiceImpl implements UserService {
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

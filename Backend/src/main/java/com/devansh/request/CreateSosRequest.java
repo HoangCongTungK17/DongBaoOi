@@ -12,4 +12,5 @@ public class CreateSosRequest {
     private BigDecimal longitude;
     private String message;
     private DisasterType disasterType;
+    private String imageUrl;
 }

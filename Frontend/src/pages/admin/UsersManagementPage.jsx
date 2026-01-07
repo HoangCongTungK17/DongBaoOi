@@ -2,7 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllUsers, updateUserRole } from "../../Redux/Admin/Action";
 import { toast } from "sonner";
-import { Search, Users, Shield, ShieldCheck, Calendar, Mail, Phone, MapPin, ChevronDown, RefreshCw } from "lucide-react";
+import { Search, Users, Shield, ShieldCheck, Calendar, Mail, Phone, MapPin, ChevronDown, RefreshCw, UserPlus, Edit2, Trash2 } from "lucide-react";
+import CreateUserModal from "./CreateUserModal";
+import EditUserModal from "./EditUserModal";
+import DeleteUserDialog from "./DeleteUserDialog";
 
 function UsersManagementPage() {
   const dispatch = useDispatch();
@@ -13,6 +16,12 @@ function UsersManagementPage() {
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [editingUserId, setEditingUserId] = useState(null);
   const [selectedRole, setSelectedRole] = useState("");
+
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
     dispatch(getAllUsers());
@@ -128,6 +137,13 @@ function UsersManagementPage() {
                 <option value="USER">User</option>
               </select>
               <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2"
+              >
+                <UserPlus className="h-5 w-5" />
+                Add User
+              </button>
+              <button
                 onClick={() => dispatch(getAllUsers())}
                 className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 title="Refresh"
@@ -169,6 +185,9 @@ function UsersManagementPage() {
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                       Joined
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -233,11 +252,10 @@ function UsersManagementPage() {
                               setEditingUserId(user.id);
                               setSelectedRole(user.role);
                             }}
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
-                              user.role === "ADMIN"
-                                ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
-                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                            }`}
+                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${user.role === "ADMIN"
+                              ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              }`}
                           >
                             {user.role === "ADMIN" ? (
                               <ShieldCheck className="h-3 w-3" />
@@ -257,6 +275,30 @@ function UsersManagementPage() {
                             : "N/A"}
                         </p>
                       </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowEditModal(true);
+                            }}
+                            className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
+                            title="Edit user"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowDeleteDialog(true);
+                            }}
+                            className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
+                            title="Delete user"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -270,6 +312,28 @@ function UsersManagementPage() {
           Showing {filteredUsers.length} of {users.length} users
         </div>
       </div>
+
+      {/* Modals */}
+      <CreateUserModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+      />
+      <EditUserModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+      />
+      <DeleteUserDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+      />
     </div>
   );
 }

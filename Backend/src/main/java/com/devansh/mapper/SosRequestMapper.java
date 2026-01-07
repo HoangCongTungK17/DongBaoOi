@@ -29,6 +29,8 @@ public class SosRequestMapper {
                 .latitude(sosRequest.getLatitude())
                 .longitude(sosRequest.getLongitude())
                 .message(sosRequest.getMessage())
+                .disasterType(sosRequest.getDisasterType())
+                .imageUrl(sosRequest.getImageUrl())
                 .disasterZoneDto(disasterZoneDto)
                 .build();
     }
