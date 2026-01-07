@@ -110,13 +110,17 @@ git push
 ```
 
 ### Bước 3: Deploy trên Vercel
+
+**QUAN TRỌNG**: Đã có file `vercel.json` ở root để tự động cấu hình!
+
 1. Truy cập [vercel.com](https://vercel.com)
 2. Đăng nhập với GitHub
 3. Click **Add New** → **Project**
 4. Import repository **DongBaoOi**
-5. Cấu hình:
+5. Vercel sẽ tự động detect cấu hình từ `vercel.json`
+6. **Hoặc cấu hình thủ công:**
    - **Framework Preset**: Vite
-   - **Root Directory**: `Frontend`
+   - **Root Directory**: `Frontend` (QUAN TRỌNG!)
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
    - **Install Command**: `npm install`
@@ -224,9 +228,19 @@ git push
   ```
 
 ### Build frontend failed
+
+**Lỗi "Missing script: build":**
+- Vercel đang build sai thư mục (ở root thay vì Frontend)
+- **Giải pháp**: Trong Vercel project settings:
+  - Vào **Settings** → **General**
+  - Set **Root Directory** = `Frontend`
+  - Hoặc đảm bảo file `vercel.json` ở root có đúng cấu hình
+
+**Lỗi khác:**
 - Kiểm tra Node version (cần Node 18+)
 - Chạy `npm install` trước
 - Xóa `node_modules` và `package-lock.json` rồi install lại
+- Test local: `cd Frontend && npm run build`
 
 ---
 
