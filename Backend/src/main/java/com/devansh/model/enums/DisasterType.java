@@ -12,7 +12,7 @@ public enum DisasterType {
     TSUNAMI("TRIỀU CƯỜNG"),
     WILDFIRE("CHÁY RỪNG"),
     BLIZZARD("MƯA ĐÁ"),
-    HOUSE_FIRE("CHÁY NHÀ"),
+    HOUSE_FIRE("HỎA HOẠN"),
     UNKNOWN("KHÔNG XÁC ĐỊNH");
 
     private final String vietnameseName;

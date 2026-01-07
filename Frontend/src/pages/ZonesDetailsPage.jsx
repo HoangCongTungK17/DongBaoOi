@@ -1,7 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, Circle, Popup, useMap } from "react-leaflet";
-import { AlertTriangle, MapPin, Shield, Info, Droplets, Flame, Wind, Zap, CloudRain, Mountain, ArrowLeft } from "lucide-react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Circle,
+  Popup,
+  useMap,
+} from "react-leaflet";
+import {
+  AlertTriangle,
+  MapPin,
+  Shield,
+  Info,
+  Droplets,
+  Flame,
+  Wind,
+  Zap,
+  CloudRain,
+  Mountain,
+  ArrowLeft,
+} from "lucide-react";
 import "leaflet/dist/leaflet.css";
 
 // Fix for default markers in react-leaflet
@@ -13,9 +32,12 @@ import { getSosByZone } from "../Redux/SOS/Action";
 import { getSafetyTips } from "../Redux/SafetyTips/Action";
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
 const ZonesDetailsPage = () => {
@@ -72,9 +94,15 @@ const ZonesDetailsPage = () => {
   const sampleTips = safetyTipsStore?.safetyTips || [];
 
   // Tips filters
-  const localTips = useMemo(() => sampleTips.filter((t) => t?.disasterZoneDto !== null), [sampleTips, zoneId, currentZone?.disasterType]);
+  const localTips = useMemo(
+    () => sampleTips.filter((t) => t?.disasterZoneDto !== null),
+    [sampleTips, zoneId, currentZone?.disasterType]
+  );
 
-  const generalTips = useMemo(() => sampleTips.filter((t) => t?.disasterZoneDto === null), [sampleTips, currentZone?.disasterType, zoneId]);
+  const generalTips = useMemo(
+    () => sampleTips.filter((t) => t?.disasterZoneDto === null),
+    [sampleTips, currentZone?.disasterType, zoneId]
+  );
 
   // Pagination for tips (3 per page)
   const pageSize = 3;
@@ -82,11 +110,21 @@ const ZonesDetailsPage = () => {
   const [generalPage, setGeneralPage] = useState(1);
 
   const localTotalPages = Math.max(1, Math.ceil(localTips.length / pageSize));
-  const generalTotalPages = Math.max(1, Math.ceil(generalTips.length / pageSize));
+  const generalTotalPages = Math.max(
+    1,
+    Math.ceil(generalTips.length / pageSize)
+  );
 
-  const paginatedLocalTips = useMemo(() => localTips.slice((localPage - 1) * pageSize, localPage * pageSize), [localTips, localPage]);
+  const paginatedLocalTips = useMemo(
+    () => localTips.slice((localPage - 1) * pageSize, localPage * pageSize),
+    [localTips, localPage]
+  );
 
-  const paginatedGeneralTips = useMemo(() => generalTips.slice((generalPage - 1) * pageSize, generalPage * pageSize), [generalTips, generalPage]);
+  const paginatedGeneralTips = useMemo(
+    () =>
+      generalTips.slice((generalPage - 1) * pageSize, generalPage * pageSize),
+    [generalTips, generalPage]
+  );
 
   // Icons
   const getDisasterIcon = (type) => {
@@ -99,7 +137,7 @@ const ZonesDetailsPage = () => {
         return <Mountain className="w-5 h-5 text-amber-400" />;
       case "CHÁY RỪNG":
         return <Flame className="w-5 h-5 text-red-500" />;
-      case "CHÁY NHÀ":
+      case "HỎA HOẠN":
         return <AlertTriangle className="w-5 h-5 text-pink-400" />;
       case "MƯA ĐÁ":
         return <CloudRain className="w-5 h-5 text-cyan-200" />;
@@ -110,7 +148,6 @@ const ZonesDetailsPage = () => {
       default:
         return <AlertTriangle className="w-5 h-5 text-slate-300" />;
     }
-
   };
 
   const getDangerBadgeStyle = (level) => {
@@ -135,7 +172,7 @@ const ZonesDetailsPage = () => {
         return "border-amber-400";
       case "CHÁY RỪNG":
         return "border-red-500";
-      case "CHÁY NHÀ":
+      case "HỎA HOẠN":
         return "border-pink-400";
       case "NGẬP ÚNG":
         return "border-indigo-400";
@@ -146,7 +183,6 @@ const ZonesDetailsPage = () => {
       default:
         return "border-slate-400";
     }
-
   };
 
   // Bright status badge for SOS
@@ -159,8 +195,11 @@ const ZonesDetailsPage = () => {
       ACKNOWLEDGED: "bg-yellow-600/20 text-yellow-300 ring-yellow-500/40",
       RESOLVED: "bg-green-600/20 text-green-300 ring-green-500/40",
     };
-    const base = "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold ring-1 ring-inset";
-    return `${base} ${map[status] || "bg-slate-800 text-slate-300 ring-slate-700"}`;
+    const base =
+      "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold ring-1 ring-inset";
+    return `${base} ${
+      map[status] || "bg-slate-800 text-slate-300 ring-slate-700"
+    }`;
   };
 
   // Pagination helpers (shadcn-like numeric)
@@ -215,7 +254,13 @@ const ZonesDetailsPage = () => {
 
   // Change SOS status handler (exclude Cancelled)
   const changeSosStatus = (id, next) => {
-    setAllSos((prev) => prev.map((s) => (s.id === id ? { ...s, sosStatus: next, updatedAt: new Date().toISOString() } : s)));
+    setAllSos((prev) =>
+      prev.map((s) =>
+        s.id === id
+          ? { ...s, sosStatus: next, updatedAt: new Date().toISOString() }
+          : s
+      )
+    );
   };
 
   function MapUpdater({ center }) {
@@ -242,10 +287,14 @@ const ZonesDetailsPage = () => {
               </button>
               <div className="flex items-center space-x-2">
                 {getDisasterIcon(currentZone.disasterType)}
-                <h1 className="text-slate-100 text-2xl font-bold">{currentZone.name}</h1>
+                <h1 className="text-slate-100 text-2xl font-bold">
+                  {currentZone.name}
+                </h1>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-slate-300 text-lg font-semibold capitalize">{currentZone?.disasterType?.replace("_", " ")}</span>
+                <span className="text-slate-300 text-lg font-semibold capitalize">
+                  {currentZone?.disasterType?.replace("_", " ")}
+                </span>
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${getDangerBadgeStyle(
                     currentZone?.dangerLevel
@@ -258,7 +307,8 @@ const ZonesDetailsPage = () => {
             <div className="flex items-center space-x-2 text-slate-400">
               <MapPin className="w-5 h-5" />
               <span className="text-sm">
-                {currentZone?.centerLatitude?.toFixed(4)}, {currentZone?.centerLongitude?.toFixed(4)}
+                {currentZone?.centerLatitude?.toFixed(4)},{" "}
+                {currentZone?.centerLongitude?.toFixed(4)}
               </span>
             </div>
           </div>
@@ -278,23 +328,55 @@ const ZonesDetailsPage = () => {
               style={{ height: "100%", width: "100%" }}
               className="rounded-xl"
             >
-              <MapUpdater center={[currentZone.centerLatitude, currentZone.centerLongitude]} />
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
-              <Marker position={[currentZone.centerLatitude, currentZone.centerLongitude]}>
+              <MapUpdater
+                center={[
+                  currentZone.centerLatitude,
+                  currentZone.centerLongitude,
+                ]}
+              />
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution="&copy; OpenStreetMap contributors"
+              />
+              <Marker
+                position={[
+                  currentZone.centerLatitude,
+                  currentZone.centerLongitude,
+                ]}
+              >
                 <Popup>
                   <div className="text-center">
-                    <h3 className="font-semibold text-slate-900">{currentZone.name}</h3>
-                    <p className="text-sm text-slate-600">{currentZone.disasterType.replace("_", " ")}</p>
-                    <p className="text-sm text-slate-600">Bán kính: {currentZone.radius} km</p>
+                    <h3 className="font-semibold text-slate-900">
+                      {currentZone.name}
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      {currentZone.disasterType.replace("_", " ")}
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      Bán kính: {currentZone.radius} km
+                    </p>
                   </div>
                 </Popup>
               </Marker>
               <Circle
-                center={[currentZone.centerLatitude, currentZone.centerLongitude]}
+                center={[
+                  currentZone.centerLatitude,
+                  currentZone.centerLongitude,
+                ]}
                 radius={currentZone.radius * 1000}
                 pathOptions={{
-                  color: currentZone.dangerLevel === "HIGH" ? "#ef4444" : currentZone.dangerLevel === "MEDIUM" ? "#f59e0b" : "#10b981",
-                  fillColor: currentZone.dangerLevel === "HIGH" ? "#fecaca" : currentZone.dangerLevel === "MEDIUM" ? "#fef3c7" : "#d1fae5",
+                  color:
+                    currentZone.dangerLevel === "HIGH"
+                      ? "#ef4444"
+                      : currentZone.dangerLevel === "MEDIUM"
+                      ? "#f59e0b"
+                      : "#10b981",
+                  fillColor:
+                    currentZone.dangerLevel === "HIGH"
+                      ? "#fecaca"
+                      : currentZone.dangerLevel === "MEDIUM"
+                      ? "#fef3c7"
+                      : "#d1fae5",
                   fillOpacity: 0.2,
                 }}
               />
@@ -305,9 +387,12 @@ const ZonesDetailsPage = () => {
                   key={s.id}
                   position={[s.latitude, s.longitude]}
                   icon={L.icon({
-                    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-                    iconRetinaUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-                    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+                    iconUrl:
+                      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+                    iconRetinaUrl:
+                      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+                    shadowUrl:
+                      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
                     iconSize: [25, 41],
                     iconAnchor: [12, 41],
                     popupAnchor: [1, -34],
@@ -354,17 +439,29 @@ const ZonesDetailsPage = () => {
                   )}`}
                 >
                   <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">{getDisasterIcon(tip.disasterType)}</div>
+                    <div className="flex-shrink-0">
+                      {getDisasterIcon(tip.disasterType)}
+                    </div>
                     <div className="flex-1">
-                      <h3 className="text-slate-300 text-lg font-semibold mb-2">{tip.title}</h3>
-                      <p className="text-slate-400 text-sm">{tip.description}</p>
+                      <h3 className="text-slate-300 text-lg font-semibold mb-2">
+                        {tip.title}
+                      </h3>
+                      <p className="text-slate-400 text-sm">
+                        {tip.description}
+                      </p>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
             <div className="mt-auto">
-              {localTips.length > 3 && <Pagination current={localPage} total={localTotalPages} onChange={setLocalPage} />}
+              {localTips.length > 3 && (
+                <Pagination
+                  current={localPage}
+                  total={localTotalPages}
+                  onChange={setLocalPage}
+                />
+              )}
             </div>
           </div>
 
@@ -393,15 +490,25 @@ const ZonesDetailsPage = () => {
                       <Info className="w-5 h-5 text-green-400" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-slate-300 text-lg font-semibold mb-2">{tip.title}</h3>
-                      <p className="text-slate-400 text-sm">{tip.description}</p>
+                      <h3 className="text-slate-300 text-lg font-semibold mb-2">
+                        {tip.title}
+                      </h3>
+                      <p className="text-slate-400 text-sm">
+                        {tip.description}
+                      </p>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
             <div className="mt-auto">
-              {generalTips.length > 3 && <Pagination current={generalPage} total={generalTotalPages} onChange={setGeneralPage} />}
+              {generalTips.length > 3 && (
+                <Pagination
+                  current={generalPage}
+                  total={generalTotalPages}
+                  onChange={setGeneralPage}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -421,9 +528,16 @@ const ZonesDetailsPage = () => {
             </button>
           </div>
           <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-            {sosRequests.length === 0 && <div className="text-slate-400 text-sm">Không có yêu cầu SOS nào cho khu vực này.</div>}
+            {sosRequests.length === 0 && (
+              <div className="text-slate-400 text-sm">
+                Không có yêu cầu SOS nào cho khu vực này.
+              </div>
+            )}
             {sosRequests.map((s) => (
-              <div key={s.id} className="rounded-lg border-l-4 border-red-500 bg-slate-900/60 p-4 shadow hover:bg-slate-900">
+              <div
+                key={s.id}
+                className="rounded-lg border-l-4 border-red-500 bg-slate-900/60 p-4 shadow hover:bg-slate-900"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-xs text-slate-300">{s.message}</div>
@@ -435,7 +549,9 @@ const ZonesDetailsPage = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={sosBadgeClass(s.sosStatus)}>{s.sosStatus}</span>
+                    <span className={sosBadgeClass(s.sosStatus)}>
+                      {s.sosStatus}
+                    </span>
                     <select
                       className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-200 hover:bg-slate-800"
                       value={s.sosStatus}
@@ -464,8 +580,12 @@ const ZonesDetailsPage = () => {
             <div className="bg-gradient-to-br from-blue-900/20 to-blue-800/10 border border-blue-700/30 rounded-xl p-6 hover:from-blue-900/30 hover:to-blue-800/20 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-3xl font-bold text-slate-100">{currentZone.radius} km</div>
-                  <div className="text-slate-400 text-sm mt-1">Bán kính ảnh hưởng</div>
+                  <div className="text-3xl font-bold text-slate-100">
+                    {currentZone.radius} km
+                  </div>
+                  <div className="text-slate-400 text-sm mt-1">
+                    Bán kính ảnh hưởng
+                  </div>
                 </div>
                 <div className="p-3 bg-blue-500/20 rounded-lg">
                   <MapPin className="w-8 h-8 text-blue-400" />
@@ -475,8 +595,12 @@ const ZonesDetailsPage = () => {
             <div className="bg-gradient-to-br from-yellow-900/20 to-yellow-800/10 border border-yellow-700/30 rounded-xl p-6 hover:from-yellow-900/30 hover:to-yellow-800/20 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-3xl font-bold text-slate-100">{localTips.length}</div>
-                  <div className="text-slate-400 text-sm mt-1">Mẹo an toàn địa phương</div>
+                  <div className="text-3xl font-bold text-slate-100">
+                    {localTips.length}
+                  </div>
+                  <div className="text-slate-400 text-sm mt-1">
+                    Mẹo an toàn địa phương
+                  </div>
                 </div>
                 <div className="p-3 bg-yellow-500/20 rounded-lg">
                   <Shield className="w-8 h-8 text-yellow-400" />
@@ -486,8 +610,12 @@ const ZonesDetailsPage = () => {
             <div className="bg-gradient-to-br from-green-900/20 to-green-800/10 border border-green-700/30 rounded-xl p-6 hover:from-green-900/30 hover:to-green-800/20 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-3xl font-bold text-slate-100">{generalTips.length}</div>
-                  <div className="text-slate-400 text-sm mt-1">Mẹo an toàn chung</div>
+                  <div className="text-3xl font-bold text-slate-100">
+                    {generalTips.length}
+                  </div>
+                  <div className="text-slate-400 text-sm mt-1">
+                    Mẹo an toàn chung
+                  </div>
                 </div>
                 <div className="p-3 bg-green-500/20 rounded-lg">
                   <Info className="w-8 h-8 text-green-400" />
@@ -497,7 +625,9 @@ const ZonesDetailsPage = () => {
             <div className="bg-gradient-to-br from-rose-900/20 to-rose-800/10 border border-rose-700/30 rounded-xl p-6 hover:from-rose-900/30 hover:to-rose-800/20 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-3xl font-bold text-slate-100">{sosRequests.length}</div>
+                  <div className="text-3xl font-bold text-slate-100">
+                    {sosRequests.length}
+                  </div>
                   <div className="text-slate-400 text-sm mt-1">Yêu cầu SOS</div>
                 </div>
                 <div className="p-3 bg-rose-500/20 rounded-lg">

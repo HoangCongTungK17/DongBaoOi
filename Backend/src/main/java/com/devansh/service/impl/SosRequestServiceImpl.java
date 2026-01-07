@@ -37,13 +37,13 @@ public class SosRequestServiceImpl implements SosRequestService {
         sosRequest.setLongitude(createSosRequest.getLongitude());
         sosRequest.setMessage(createSosRequest.getMessage());
         sosRequest.setDisasterType(createSosRequest.getDisasterType());
+        sosRequest.setImageUrl(createSosRequest.getImageUrl());
         sosRequest.setStatus(SosStatus.PENDING);
 
         disasterZoneService.findMatchingZone(
                 createSosRequest.getLatitude(),
                 createSosRequest.getLongitude(),
-                createSosRequest.getDisasterType()
-        ).ifPresent(sosRequest::setDisasterZone);
+                createSosRequest.getDisasterType()).ifPresent(sosRequest::setDisasterZone);
 
         SosRequest savedSos = sosRepository.save(sosRequest);
 
@@ -69,15 +69,14 @@ public class SosRequestServiceImpl implements SosRequestService {
             disasterZoneService.findMatchingZone(
                     createSosRequest.getLatitude(),
                     createSosRequest.getLongitude(),
-                    createSosRequest.getDisasterType()
-            ).ifPresentOrElse(sosRequest::setDisasterZone,
-                    () -> sosRequest.setDisasterZone(null)
-            );
+                    createSosRequest.getDisasterType()).ifPresentOrElse(sosRequest::setDisasterZone,
+                            () -> sosRequest.setDisasterZone(null));
 
         }
 
         sosRequest.setMessage(createSosRequest.getMessage());
         sosRequest.setDisasterType(createSosRequest.getDisasterType());
+        sosRequest.setImageUrl(createSosRequest.getImageUrl());
         sosRequest.setStatus(SosStatus.PENDING);
         sosRequest.setUpdatedAt(LocalDateTime.now());
 

@@ -17,6 +17,7 @@ import {
   UPDATE_STATUS_REQUEST,
   UPDATE_STATUS_SUCCESS,
 } from "./ActionType.js";
+import { addNotification } from "../Notification/Action.js";
 
 export const getEveryoneSos = () => async (dispatch) => {
   try {
@@ -83,6 +84,11 @@ export const createSosRequest = (reqData) => async (dispatch) => {
     }
 
     dispatch({ type: CREATE_SOS_SUCCESS, payload: resData });
+    dispatch(addNotification({
+      type: "sos",
+      title: "SOS Request Created",
+      message: `Your SOS request has been sent successfully`,
+    }));
   } catch (error) {
     console.error("Create new sos (error): ", error);
     dispatch({ type: CREATE_SOS_FAILURE, payload: error.message || "Something went wrong!" });
@@ -159,6 +165,11 @@ export const udpateSosStatus =
       }
 
       dispatch({ type: UPDATE_STATUS_SUCCESS, payload: resData });
+      dispatch(addNotification({
+        type: "success",
+        title: "SOS Status Updated",
+        message: `SOS #${sosId} has been updated to ${status}`,
+      }));
       toast.success("Status updated successfully");
     } catch (error) {
       console.error("update status (error): ", error);

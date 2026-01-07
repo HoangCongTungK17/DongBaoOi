@@ -5,7 +5,6 @@ import { dashboardReducer } from "./Dashboard/Reducer.js";
 import { disasterReducer } from "./DisasterZone/Reducer.js";
 import { sosReducer } from "./SOS/Reducer.js";
 import { safetyTipReducer } from "./SafetyTips/Reducer.js";
-import { apiSlice } from "./apiSlice"; // Import apiSlice bạn đã tạo
 
 const rootReducer = combineReducers({
   authStore: authReducer,
@@ -13,8 +12,6 @@ const rootReducer = combineReducers({
   disasterStore: disasterReducer,
   sosStore: sosReducer,
   safetyTipsStore: safetyTipReducer,
-  // Đăng ký reducerPath của apiSlice vào store
-  [apiSlice.reducerPath]: apiSlice.reducer,
 });
 
 export const store = configureStore({

@@ -5,34 +5,67 @@ import { toast } from "sonner";
 import { X, AlertTriangle, Send, MapPin, Loader2 } from "lucide-react";
 
 const disasterTypes = [
-  "LŨ LỤT",
-  "ĐỘNG ĐẤT",
-  "SẠT LỞ ĐẤT",
-  "BÃO/SIÊU BÃO",
-  "HỐ SỤT ĐẤT",
-  "TRIỀU CƯỜNG",
-  "CHÁY RỪNG",
-  "MƯA ĐÁ",
-  "CHÁY NHÀ",
-  "KHÔNG XÁC ĐỊNH"
+  { value: "FLOOD", label: "LŨ LỤT" },
+  { value: "EARTHQUAKE", label: "ĐỘNG ĐẤT" },
+  { value: "LANDSLIDE", label: "SẠT LỞ ĐẤT" },
+  { value: "TORNADO", label: "BÃO/SIÊU BÃO" },
+  { value: "SINKHOLE", label: "HỐ SỤT ĐẤT" },
+  { value: "TSUNAMI", label: "TRIỀU CƯỜNG" },
+  { value: "WILDFIRE", label: "CHÁY RỪNG" },
+  { value: "BLIZZARD", label: "MƯA ĐÁ" },
+  { value: "HOUSE_FIRE", label: "HỎA HOẠN" },
+  { value: "UNKNOWN", label: "KHÔNG XÁC ĐỊNH" },
 ];
 
 const AddSosModal = ({ open, onClose }) => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
-  
+  const [imagePreview, setImagePreview] = useState(null);
+
   const [form, setForm] = useState({
     message: "",
     disasterType: "",
+    imageUrl: "",
   });
 
   const handleClose = () => {
-    setForm({ message: "", disasterType: "" });
+    setForm({ message: "", disasterType: "", imageUrl: "" });
+    setImagePreview(null);
     onClose();
   };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Kiểm tra loại file
+      if (!file.type.startsWith("image/")) {
+        toast.error("Vui lòng chọn file ảnh hợp lệ.");
+        return;
+      }
+
+      // Kiểm tra kích thước (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Kích thước ảnh không được vượt quá 5MB.");
+        return;
+      }
+
+      // Preview ảnh
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+        setForm({ ...form, imageUrl: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    setForm({ ...form, imageUrl: "" });
   };
 
   const handleSubmit = (e) => {
@@ -54,10 +87,11 @@ const AddSosModal = ({ open, onClose }) => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        
+
         const reqData = {
           message: form.message,
           disasterType: form.disasterType,
+          imageUrl: form.imageUrl,
           latitude: latitude,
           longitude: longitude,
         };
@@ -76,10 +110,30 @@ const AddSosModal = ({ open, onClose }) => {
       },
       (error) => {
         console.error("Lỗi GPS:", error);
-        toast.error("Không thể lấy vị trí. Hãy bật GPS và thử lại.");
+        let errorMessage = "Không thể lấy vị trí. ";
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += "Bạn đã từ chối quyền truy cập vị trí.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += "Thông tin vị trí không khả dụng.";
+            break;
+          case error.TIMEOUT:
+            errorMessage += "Yêu cầu lấy vị trí đã hết thời gian chờ.";
+            break;
+          default:
+            errorMessage += "Hãy bật GPS và thử lại.";
+        }
+
+        toast.error(errorMessage);
         setLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      {
+        enableHighAccuracy: false,  // Thay đổi từ true thành false
+        timeout: 30000,              // Tăng từ 10s lên 30s
+        maximumAge: 60000            // Cache vị trí trong 60s
+      }
     );
   };
 
@@ -88,16 +142,14 @@ const AddSosModal = ({ open, onClose }) => {
   return (
     // --- SỬA ĐỔI QUAN TRỌNG TẠI ĐÂY: Thay z-50 thành z-[9999] ---
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" 
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
         onClick={handleClose}
       />
 
       {/* Modal Container */}
       <div className="relative w-full max-w-lg transform overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl transition-all animate-in fade-in zoom-in-95 duration-200">
-        
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/50 px-6 py-4">
           <div className="flex items-center gap-3">
@@ -105,7 +157,9 @@ const AddSosModal = ({ open, onClose }) => {
               <AlertTriangle className="h-5 w-5 text-red-500" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white">Gửi tín hiệu SOS</h3>
+              <h3 className="text-lg font-semibold text-white">
+                Gửi tín hiệu SOS
+              </h3>
               <p className="text-xs text-slate-400">Hỗ trợ khẩn cấp 24/7</p>
             </div>
           </div>
@@ -119,9 +173,10 @@ const AddSosModal = ({ open, onClose }) => {
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="px-6 py-6 space-y-5">
-          
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Loại sự cố / Thảm họa</label>
+            <label className="text-sm font-medium text-slate-300">
+              Loại sự cố / Thảm họa
+            </label>
             <div className="relative">
               <select
                 name="disasterType"
@@ -129,10 +184,12 @@ const AddSosModal = ({ open, onClose }) => {
                 onChange={handleChange}
                 className="w-full appearance-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition-all"
               >
-                <option value="" disabled className="text-slate-500">-- Chọn loại sự cố --</option>
+                <option value="" disabled className="text-slate-500">
+                  -- Chọn loại sự cố --
+                </option>
                 {disasterTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
+                  <option key={type.value} value={type.value}>
+                    {type.label}
                   </option>
                 ))}
               </select>
@@ -140,7 +197,9 @@ const AddSosModal = ({ open, onClose }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Mô tả tình huống</label>
+            <label className="text-sm font-medium text-slate-300">
+              Mô tả tình huống
+            </label>
             <textarea
               name="message"
               rows={4}
@@ -151,10 +210,65 @@ const AddSosModal = ({ open, onClose }) => {
             />
           </div>
 
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-300">
+              Tải lên ảnh (tùy chọn)
+            </label>
+            {!imagePreview ? (
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label
+                  htmlFor="image-upload"
+                  className="flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed border-slate-700 bg-slate-950 hover:border-red-500 hover:bg-slate-900 transition-all cursor-pointer"
+                >
+                  <svg
+                    className="w-8 h-8 text-slate-500 mb-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <p className="text-sm text-slate-400">Click để chọn ảnh</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    PNG, JPG tối đa 5MB
+                  </p>
+                </label>
+              </div>
+            ) : (
+              <div className="relative rounded-xl overflow-hidden border border-slate-700">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-48 object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 transition-all"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="flex items-start gap-3 rounded-lg bg-blue-900/10 p-3 text-xs text-blue-400 ring-1 ring-blue-900/30">
             <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
             <p>
-              Hệ thống sẽ tự động lấy <strong>tọa độ GPS chính xác</strong> của thiết bị khi bạn bấm gửi. Vui lòng cấp quyền truy cập vị trí.
+              Hệ thống sẽ tự động lấy <strong>tọa độ GPS chính xác</strong> của
+              thiết bị khi bạn bấm gửi. Vui lòng cấp quyền truy cập vị trí.
             </p>
           </div>
 
@@ -167,7 +281,7 @@ const AddSosModal = ({ open, onClose }) => {
             >
               Hủy bỏ
             </button>
-            
+
             <button
               type="submit"
               disabled={loading}
@@ -186,7 +300,6 @@ const AddSosModal = ({ open, onClose }) => {
               )}
             </button>
           </div>
-
         </form>
       </div>
     </div>
