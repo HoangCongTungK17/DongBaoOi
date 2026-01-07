@@ -72,32 +72,18 @@ function ReportPage() {
   const dashboardStore = useSelector((store) => store.dashboardStore);
   const { isAdmin } = useSelector((store) => store.authStore);
 
+  const zones = disasterStore?.allZones || [];
+  const allSos = Array.isArray(sosStore?.allSos) ? sosStore.allSos : [];
+  const summary = dashboardStore?.dashboardSummary || {};
+  const stats = dashboardStore?.stats || [];
+  const isLoading = disasterStore?.loading || sosStore?.loading || dashboardStore?.summaryLoading;
+
   useEffect(() => {
     dispatch(getAllDisasterZones());
     dispatch(getEveryoneSos());
     dispatch(getDashboardSummay());
     dispatch(getZoneActivity());
   }, [dispatch, timeRange]);
-
-  // Kiểm tra quyền admin
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white">Truy cập bị từ chối</h2>
-          <p className="text-slate-400 mt-2">
-            Bạn không có quyền truy cập trang này. Chỉ admin mới có thể xem báo cáo.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const zones = disasterStore?.allZones || [];
-  const allSos = sosStore?.allSos || [];
-  const summary = dashboardStore?.dashboardSummary || {};
-  const stats = dashboardStore?.stats || [];
 
   // Tính toán thống kê SOS theo status
   const sosByStatus = useMemo(() => {
@@ -173,6 +159,33 @@ function ReportPage() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
   }, [allSos]);
+
+  // Kiểm tra quyền admin - SAU khi tất cả hooks đã được gọi
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white">Truy cập bị từ chối</h2>
+          <p className="text-slate-400 mt-2">
+            Bạn không có quyền truy cập trang này. Chỉ admin mới có thể xem báo cáo.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state - SAU khi tất cả hooks đã được gọi
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-slate-400">Đang tải dữ liệu báo cáo...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Export CSV
   const exportToCSV = () => {

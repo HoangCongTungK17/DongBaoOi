@@ -20,10 +20,9 @@ import {
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { useDispatch, useSelector } from "react-redux";
-import { getEveryoneSos, udpateSosStatus } from "../../Redux/SOS/Action";
 import { toast } from "sonner";
 import AddSosModal from "./AddSosModal.jsx";
-import { useGetSosRequestsQuery, useUpdateSosStatusMutation } from "../../Redux/apiSlice";
+import { useGetSosRequestsQuery, useGetUserSosRequestsQuery, useUpdateSosStatusMutation } from "../../Redux/apiSlice";
 
 // --- Cấu hình Icon Marker ---
 const redIcon = L.icon({
@@ -130,20 +129,34 @@ const disasterIcon = (type) => {
 };
 
 export default function SOSRequestsPage() {
+  const dispatch = useDispatch();
   const { isAdmin } = useSelector((store) => store.authStore);
   
+  // Admin xem tất cả, user chỉ xem của mình
+  const { data: adminData, isFetching: adminFetching } = useGetSosRequestsQuery(undefined, {
+    skip: !isAdmin,
+  });
+  const { data: userData, isFetching: userFetching } = useGetUserSosRequestsQuery(undefined, {
+    skip: isAdmin,
+  });
+  
+  const sosData = isAdmin ? adminData : userData;
+  const isFetching = isAdmin ? adminFetching : userFetching;
+  const [updateSosStatus] = useUpdateSosStatusMutation();
+
+  // States cho filters
+  const [zoneNameFilter, setZoneNameFilter] = useState("");
+  const [zoneIdFilter, setZoneIdFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
+
   const [localStatus, setLocalStatus] = useState({});
 
-  useEffect(() => {
-    dispatch(getEveryoneSos());
-  }, [dispatch]);
-
-  // Normalize data
-  const [sos, setSos] = useState([]);
-
-  useEffect(() => {
-    if (sosStore?.allSos) {
-      const normalized = sosStore.allSos.map((r) => ({
+  // Normalize data from RTK Query
+  const sos = useMemo(() => {
+    if (sosData && Array.isArray(sosData)) {
+      const normalized = sosData.map((r) => ({
         id: r.id,
         userId: r.user_id || r.userId || "Unknown",
         message: r.message,
@@ -154,28 +167,26 @@ export default function SOSRequestsPage() {
         status: r.sosStatus,
         zoneId: r.disasterZoneDto?.id || null,
         zoneName: r.disasterZoneDto?.name || "No Zone",
-        // Ưu tiên lấy loại thảm họa từ chính request, nếu không thì lấy từ zone
         disasterType: r.disasterType || r.disasterZoneDto?.disasterType || "UNKNOWN",
         dangerLevel: r.disasterZoneDto?.dangerLevel || "N/A",
       }));
-      setSos(normalized);
 
-      // Initialize localStatus for each row
       const statusMap = {};
       normalized.forEach((r) => {
         statusMap[r.id] = r.status;
       });
       setLocalStatus(statusMap);
+
+      return normalized;
     }
-  }, [sosStore?.allSos]);
+    return [];
+  }, [sosData]);
 
   // Modal logic
   const [showAddModal, setShowAddModal] = useState(false);
-  
-  // Hàm xử lý đóng modal và tự động tải lại dữ liệu
   const handleCloseModal = () => {
     setShowAddModal(false);
-    dispatch(getEveryoneSos()); 
+    // RTK Query sẽ tự động refetch khi modal đóng vì tag invalidation
   };
 
   // Filters State
@@ -194,18 +205,14 @@ export default function SOSRequestsPage() {
     "KHÔNG XÁC ĐỊNH"
   ];
 
-
-  const hasZoneFilter =
-    zoneNameFilter.trim() !== "" || zoneIdFilter.trim() !== "";
+  const hasZoneFilter = zoneNameFilter.trim() !== "" || zoneIdFilter.trim() !== "";
 
   const filtered = useMemo(
     () =>
       (sos || []).filter((r) => {
         const matchesZoneName =
           !zoneNameFilter ||
-          (r.zoneName || "")
-            .toLowerCase()
-            .includes(zoneNameFilter.toLowerCase());
+          (r.zoneName || "").toLowerCase().includes(zoneNameFilter.toLowerCase());
         const matchesZoneId =
           !zoneIdFilter || String(r.zoneId || "") === zoneIdFilter.trim();
 
@@ -225,14 +232,17 @@ export default function SOSRequestsPage() {
   // Pagination
   const perPage = 5;
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  
   useEffect(() => {
     setPage(1);
   }, [typeFilter, statusFilter, zoneNameFilter, zoneIdFilter]);
+  
   const paginated = useMemo(() => filtered.slice((page - 1) * perPage, page * perPage), [filtered, page]);
 
-  // Analytics
-  const byStatus = useMemo(() => statuses.map((s) => ({ name: s, value: filtered.filter((r) => r.status === s).length })), [filtered]);
-  const byType = useMemo(() => typeOptions.map((t) => ({ name: t, value: filtered.filter((r) => r.disasterType === t).length })), [filtered]);
+  // --- ANALYTICS (ĐÃ SỬA LỖI KHAI BÁO TRÙNG) ---
+  const byStatus = useMemo(() => statuses.map((s) => ({ name: s, value: filtered.filter((r) => r.status === s).length })), [filtered, statuses]);
+  const byType = useMemo(() => typeOptions.map((t) => ({ name: t, value: filtered.filter((r) => r.disasterType === t).length })), [filtered, typeOptions]);
+  
   const topZones = useMemo(() => {
     const counts = filtered.reduce((acc, r) => {
       acc[r.zoneName] = (acc[r.zoneName] || 0) + 1;
@@ -249,18 +259,14 @@ export default function SOSRequestsPage() {
       .map(([zone, count]) => ({ zone, count, risk: risks[zone] === 3 ? "HIGH" : risks[zone] === 2 ? "MEDIUM" : "LOW" }));
   }, [filtered]);
 
-  // Functions
-  const updateStatus = (id, next) => {
-    dispatch(udpateSosStatus({ sosId: id, status: next })).then((result) => {
-      if (udpateSosStatus.rejected.match(result)) {
-        toast.error("Failed to update status");
-      } else {
-        toast.success("Status updated successfully");
-      }
-    });
-  };
+  // Derived data for charts
+  const statusTotal = byStatus.reduce((sum, s) => sum + s.value, 0) || 1;
+  const statusBarData = byStatus.map((s) => ({ name: s.name, count: s.value, pct: Math.round((s.value / statusTotal) * 100) }));
+  
+  const typeTotal = byType.reduce((sum, t) => sum + t.value, 0) || 1;
+  const typeBarData = byType.map((t) => ({ name: t.name, count: t.value, pct: Math.round((t.value / typeTotal) * 100) }));
 
-  const setFilterStatus = (s) => setStatusFilter((prev) => (prev === s ? "" : s));
+  // Functions
   const setFilterType = (t) => setTypeFilter((prev) => (prev === t ? "" : t));
   const clearFilters = () => {
     setTypeFilter("");
@@ -268,13 +274,6 @@ export default function SOSRequestsPage() {
     setZoneNameFilter("");
     setZoneIdFilter("");
   };
-
-  // Analytics
-  const byStatus = useMemo(() => statuses.map((s) => ({ name: s, value: filtered.filter((r) => r.status === s).length })), [filtered]);
-  const statusTotal = byStatus.reduce((sum, s) => sum + s.value, 0) || 1;
-  const statusBarData = byStatus.map((s) => ({ name: s.name, count: s.value, pct: Math.round((s.value / statusTotal) * 100) }));
-  const typeTotal = byType.reduce((sum, t) => sum + t.value, 0) || 1;
-  const typeBarData = byType.map((t) => ({ name: t.name, count: t.value, pct: Math.round((t.value / typeTotal) * 100) }));
 
   // Colors
   const barColorForStatus = (name) => {
@@ -295,10 +294,10 @@ export default function SOSRequestsPage() {
         "CHÁY RỪNG": "#fbbf24",
         "CHÁY NHÀ": "#06b6d4",
         "MƯA ĐÁ": "#ef4444",
-        "ĐỘNG ĐẤT": "#78350f",     // Amber/Brown
-        "HỐ SỤT ĐẤT": "#4b5563",   // Gray
-        "TRIỀU CƯỜNG": "#1e40af",  // Dark Blue
-        "KHÔNG XÁC ĐỊNH": "#94a3b8" // Slate
+        "ĐỘNG ĐẤT": "#78350f",
+        "HỐ SỤT ĐẤT": "#4b5563",
+        "TRIỀU CƯỜNG": "#1e40af",
+        "KHÔNG XÁC ĐỊNH": "#94a3b8"
     }[name] || "#94a3b8");
 
   // Hover highlights
@@ -398,6 +397,7 @@ export default function SOSRequestsPage() {
                 <option value="">Tất cả trạng thái</option>
                 {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
+            </div>
             <button onClick={clearFilters} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">
                 Đặt lại
             </button>
@@ -630,14 +630,19 @@ export default function SOSRequestsPage() {
                         }
                         const nextStatus = e.target.value;
 
-                        // Optimistic UI
+                        // Optimistic UI update
                         setLocalStatus((prev) => ({ ...prev, [r.id]: nextStatus }));
 
-                        // Call backend
-                        const result = await dispatch(udpateSosStatus({ sosId: r.id, status: nextStatus }));
-
-                        setLocalStatus((prev) => ({ ...prev, [r.id]: r.status }));
-                        dispatch(getEveryoneSos());
+                        try {
+                          // Call RTK Query mutation
+                          await updateSosStatus({ id: r.id, status: nextStatus }).unwrap();
+                          toast.success("Đã cập nhật trạng thái!");
+                        } catch (error) {
+                          // Revert on error
+                          setLocalStatus((prev) => ({ ...prev, [r.id]: r.status }));
+                          toast.error("Không thể cập nhật trạng thái");
+                          console.error("Update status error:", error);
+                        }
                       }}
                       className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-200 hover:bg-slate-800"
                     >

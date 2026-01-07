@@ -70,6 +70,8 @@ export const authReducer = (store = initialState, { type, payload }) => {
       return { ...store, loading: true, error: null };
     case LOGIN_SUCCESS:
       const loginDecoded = jwtDecode(payload.accessToken);
+      console.log("JWT Decoded:", loginDecoded);
+      console.log("User role:", loginDecoded.role, "isAdmin:", loginDecoded.role === "ADMIN");
 
       return {
         ...store,
@@ -92,7 +94,12 @@ export const authReducer = (store = initialState, { type, payload }) => {
       localStorage.removeItem("refreshToken");
       return {
         ...initialState,
+        accessToken: null,
+        refreshToken: null,
         isAuthenticated: false,
+        isAdmin: false,
+        error: null,
+        loading: false,
       };
     case GET_DETAILS_REQUEST:
       return { ...store, currentUserLoading: true, currentUserError: null };

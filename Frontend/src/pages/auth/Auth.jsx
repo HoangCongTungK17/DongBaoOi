@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { register, login } from "../../Redux/Auth/Action";
 import { useNavigate } from "react-router-dom";
 import ForgotPassword from "./ForgotPassword";
+import { LOGOUT } from "../../Redux/Auth/ActionType";
 
 function Auth() {
   // "login" | "register" | "admin" | "forgot"
@@ -13,6 +14,7 @@ function Auth() {
     email: "",
     password: "",
   });
+  const [roleError, setRoleError] = useState("");
 
   // Pre-filled admin credentials
   const adminEmail = "admin@example.com";
@@ -20,7 +22,7 @@ function Auth() {
 
   const isLogin = mode === "login";
   const isRegister = mode === "register";
-  const isAdmin = mode === "admin";
+  const isAdminMode = mode === "admin";
   const isForgot = mode === "forgot";
 
   // Nếu đang ở mode forgot, hiển thị component ForgotPassword
@@ -30,7 +32,7 @@ function Auth() {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated, loading, error } = useSelector((store) => store.authStore);
+  const { isAuthenticated, isAdmin, loading, error } = useSelector((store) => store.authStore);
 
   const updateFormFields = (e) => {
     const { name, value } = e.target;
@@ -39,21 +41,28 @@ function Auth() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Lưu mode vào sessionStorage để validation có thể kiểm tra sau
+    sessionStorage.setItem("loginMode", mode);
+    
     if (isRegister) {
       dispatch(register(userData));
-    } else if (isLogin) {
-      dispatch(login({ email: userData.email, password: userData.password }));
     } else {
-      dispatch(login({ email: adminEmail, password: adminPassword }));
+      // Cả login và admin đều dùng credentials từ form
+      dispatch(login({ email: userData.email, password: userData.password }));
     }
   };
 
-  // now after submitting it will work.
+  // Navigate sau khi authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/");
     }
   }, [isAuthenticated, navigate]);
+
+  // Clear roleError khi chuyển mode
+  useEffect(() => {
+    setRoleError("");
+  }, [mode]);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 bg-slate-950">
@@ -76,12 +85,12 @@ function Auth() {
           <h1 className="mt-3 text-xl font-bold text-slate-100">
             {isLogin && "Welcome Back"}
             {isRegister && "Create an Account"}
-            {isAdmin && "Admin Login"}
+            {isAdminMode && "Admin Login"}
           </h1>
           <p className="mt-1 text-sm text-slate-400">
             {isLogin && "Login to manage disaster zones and SOS requests"}
             {isRegister && "Register to gain access to admin features"}
-            {isAdmin && "Login as admin to access all system features"}
+            {isAdminMode && "Login as admin to access all system features"}
           </p>
         </div>
 
@@ -139,12 +148,16 @@ function Auth() {
               loading ? "bg-gray-400 cursor-not-allowed" : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90"
             }`}
           >
-            {loading ? "Processing..." : isLogin ? "Login" : isRegister ? "Register" : isAdmin ? "Login as admin" : "Submit"}
+            {loading ? "Processing..." : isLogin ? "Login" : isRegister ? "Register" : isAdminMode ? "Login as admin" : "Submit"}
           </button>
         </form>
 
-        {error && (
-          <p className="text-center mt-2 text-red-500 text-sm">{isRegister ? "Email already registered. Try to Login." : "Something went wrong"}</p>
+        {error && !roleError && (
+          <p className="text-center mt-2 text-red-500 text-sm">{isRegister ? "Email already registered. Try to Login." : "Email hoặc mật khẩu không đúng"}</p>
+        )}
+
+        {roleError && (
+          <p className="text-center mt-2 text-amber-500 text-sm">{roleError}</p>
         )}
 
         {/* Toggle */}
@@ -181,7 +194,7 @@ function Auth() {
             </>
           )}
 
-          {isAdmin && (
+          {isAdminMode && (
             <>
               Bạn không phải admin?{" "}
               <button type="button" onClick={() => setMode("login")} className="text-blue-400 hover:underline">

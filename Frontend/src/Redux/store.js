@@ -5,6 +5,9 @@ import { dashboardReducer } from "./Dashboard/Reducer.js";
 import { disasterReducer } from "./DisasterZone/Reducer.js";
 import { sosReducer } from "./SOS/Reducer.js";
 import { safetyTipReducer } from "./SafetyTips/Reducer.js";
+import { notificationReducer } from "./Notification/Reducer.js";
+import { adminReducer } from "./Admin/Reducer.js";
+import { apiSlice } from "./apiSlice.js";
 
 const rootReducer = combineReducers({
   authStore: authReducer,
@@ -12,6 +15,9 @@ const rootReducer = combineReducers({
   disasterStore: disasterReducer,
   sosStore: sosReducer,
   safetyTipsStore: safetyTipReducer,
+  notificationStore: notificationReducer,
+  adminStore: adminReducer,
+  [apiSlice.reducerPath]: apiSlice.reducer,
 });
 
 export const store = configureStore({

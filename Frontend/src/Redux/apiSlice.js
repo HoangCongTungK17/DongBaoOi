@@ -6,8 +6,8 @@ export const apiSlice = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: BASE_URL,
     prepareHeaders: (headers) => {
-      // Lấy token từ localStorage (đảm bảo key là "jwt" khớp với code Auth cũ của bạn)
-      const token = localStorage.getItem("jwt");
+      // Lấy token từ localStorage - phải dùng key "accessToken"
+      const token = localStorage.getItem("accessToken");
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
       }
@@ -16,8 +16,18 @@ export const apiSlice = createApi({
   }),
   tagTypes: ['SOS', 'Zone', 'Dashboard'],
   endpoints: (builder) => ({
-    // Query lấy danh sách SOS
+    // Query lấy tất cả SOS (admin only)
     getSosRequests: builder.query({
+      query: () => '/sos/all',
+      transformResponse: (response) => {
+        // Backend trả về Page<SosRequestDto> có cấu trúc: { content: [...], totalElements, totalPages, ... }
+        // Transform để trả về mảng content
+        return response.content || response;
+      },
+      providesTags: ['SOS'],
+    }),
+    // Query lấy SOS của user hiện tại
+    getUserSosRequests: builder.query({
       query: () => '/sos',
       providesTags: ['SOS'],
     }),
@@ -40,6 +50,7 @@ export const apiSlice = createApi({
 
 export const { 
   useGetSosRequestsQuery, 
+  useGetUserSosRequestsQuery,
   useUpdateSosStatusMutation, 
   useGetZonesQuery 
 } = apiSlice;

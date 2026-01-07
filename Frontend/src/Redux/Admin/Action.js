@@ -29,12 +29,20 @@ export const getAllUsers = () => async (dispatch) => {
       },
     });
 
-    const resData = await res.json();
-
+    // Kiểm tra status trước khi parse JSON
     if (!res.ok) {
-      dispatch({ type: GET_ALL_USERS_FAILURE, payload: resData.message || "Failed to fetch users" });
+      let errorMessage = "Failed to fetch users";
+      if (res.status === 403) {
+        errorMessage = "Bạn không có quyền truy cập trang này";
+      } else if (res.status === 401) {
+        errorMessage = "Phiên đăng nhập hết hạn";
+      }
+      console.error("Get all users failed:", res.status);
+      dispatch({ type: GET_ALL_USERS_FAILURE, payload: errorMessage });
       return;
     }
+
+    const resData = await res.json();
 
     dispatch({
       type: GET_ALL_USERS_SUCCESS,

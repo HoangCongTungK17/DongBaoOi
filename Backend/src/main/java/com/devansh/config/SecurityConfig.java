@@ -47,8 +47,8 @@ public class SecurityConfig {
                         .requestMatchers("/zones/**").permitAll() 
 
                         // 3. Cấu hình quyền Admin
-                        // Lưu ý: Dùng hasAuthority an toàn hơn hasRole nếu DB lưu "ADMIN" thay vì "ROLE_ADMIN"
-                        .requestMatchers("/admin/**").hasAuthority(Role.ADMIN.name())
+                        // Sử dụng hasRole vì User.getAuthorities() trả về "ROLE_ADMIN"
+                        .requestMatchers("/admin/**").hasRole(Role.ADMIN.name())
 
                         // 4. Các request còn lại bắt buộc phải có Token
                         .anyRequest().authenticated()

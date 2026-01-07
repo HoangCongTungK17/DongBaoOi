@@ -1,17 +1,25 @@
-import React, { useEffect, Suspense, lazy } from "react"; // Thêm Suspense và lazy
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Toaster } from "sonner";
 
-// Giữ lại các thành phần nhẹ hoặc dùng chung
+// Components dùng chung
 import Navbar from "./components/Navbar.jsx";
 import Auth from "./pages/auth/Auth";
 import { isTokenValid } from "./Redux/Auth/isTokenValid.js";
 import { LOGOUT } from "./Redux/Auth/ActionType.js";
-import { Toaster } from "sonner";
+
+// --- CÁC DÒNG QUAN TRỌNG BẠN ĐANG THIẾU ---
+import DashboardPage from "./pages/DashboardPage.jsx";
+import DisasterZonesPage from "./pages/DisasterZonesPage.jsx";
+import ZonesDetailsPage from "./pages/ZonesDetailsPage.jsx";
+import SOSRequestsPage from "./pages/SOSRequest/SOSRequestsPage.jsx";
+// -------------------------------------------
+
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ReportPage from "./pages/ReportPage.jsx";
 import ContactsPage from "./pages/ContactsPage.jsx";
+import UsersManagementPage from "./pages/admin/UsersManagementPage.jsx";
 
 function App() {
   const { isAuthenticated, accessToken } = useSelector((store) => store.authStore);
@@ -39,6 +47,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/report" element={<ReportPage />} />
             <Route path="/contacts" element={<ContactsPage />} />
+            <Route path="/admin/users" element={<UsersManagementPage />} />
           </Routes>
         </div>
       )}

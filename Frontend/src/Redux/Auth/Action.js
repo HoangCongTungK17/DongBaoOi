@@ -56,9 +56,51 @@ export const login = (loginData) => async (dispatch) => {
 
     if (!res.ok) {
       console.error("Login failed:", resData);
-      dispatch({ type: LOGIN_FAILURE, payload: { error: resData } });
-      return;
+      // Thêm message cụ thể hơn
+      const errorMessage = res.status === 403 ? "Email hoặc mật khẩu không đúng" : 
+                          res.status === 401 ? "Không có quyền truy cập" :
+                          resData.message || "Đăng nhập thất bại";
+      dispatch({ type: LOGIN_FAILURE, payload: { error: errorMessage } });
+      return { success: false, error: errorMessage };
     }
+
+    // ===== VALIDATION: Kiểm tra role vs loginMode =====
+    const loginMode = sessionStorage.getItem("loginMode");
+    console.log("Login mode from sessionStorage:", loginMode);
+    
+    // Decode JWT để lấy role
+    const { jwtDecode } = await import("jwt-decode");
+    const decoded = jwtDecode(resData.accessToken);
+    const userRole = decoded.role;
+    const isAdmin = userRole === "ADMIN";
+    
+    console.log("User role:", userRole, "isAdmin:", isAdmin, "loginMode:", loginMode);
+    
+    // Nếu user login qua trang admin -> CHẶN
+    if (loginMode === "admin" && !isAdmin) {
+      console.log("BLOCKED: User trying to login via admin page");
+      sessionStorage.removeItem("loginMode");
+      dispatch({ 
+        type: LOGIN_FAILURE, 
+        payload: { error: "Bạn không có quyền admin! Vui lòng đăng nhập bằng tài khoản admin." } 
+      });
+      return { success: false, error: "Bạn không có quyền admin!" };
+    }
+    
+    // Nếu admin login qua trang user -> CHẶN
+    if ((loginMode === "login" || loginMode === "register") && isAdmin) {
+      console.log("BLOCKED: Admin trying to login via user page");
+      sessionStorage.removeItem("loginMode");
+      dispatch({ 
+        type: LOGIN_FAILURE, 
+        payload: { error: "Bạn đang dùng tài khoản admin. Vui lòng sử dụng 'Login as Admin'." } 
+      });
+      return { success: false, error: "Vui lòng sử dụng 'Login as Admin'" };
+    }
+    // ===== END VALIDATION =====
+    
+    // Clear loginMode after successful validation
+    sessionStorage.removeItem("loginMode");
 
     // Lưu token vào localStorage
     localStorage.setItem("accessToken", resData.accessToken);
@@ -66,10 +108,13 @@ export const login = (loginData) => async (dispatch) => {
 
     dispatch({ type: LOGIN_SUCCESS, payload: resData });
     console.log("Login success", resData);
+    return { success: true };
 
   } catch (error) {
     console.error("Login error catch:", error);
-    dispatch({ type: LOGIN_FAILURE, payload: error });
+    sessionStorage.removeItem("loginMode");
+    dispatch({ type: LOGIN_FAILURE, payload: { error: "Lỗi kết nối server" } });
+    return { success: false, error: "Lỗi kết nối server" };
   }
 };
 
