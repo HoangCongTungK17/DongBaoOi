@@ -2,7 +2,7 @@ spring:
   datasource:
     username: root # e.g., postgres
     password: 123456 # e.g., root
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/dongbaooi # e.g., foodloop
+    url: jdbc:mysql://mysql:3306/myapp_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
