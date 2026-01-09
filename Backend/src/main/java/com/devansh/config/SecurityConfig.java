@@ -37,16 +37,11 @@ public class SecurityConfig {
 
         http
                 .csrf(CsrfConfigurer::disable)
-                .authorizeHttpRequests(
-                        authorize -> authorize
-                                .requestMatchers("/auth/**")
-                                .permitAll()
-
-                                .requestMatchers("/admin/**").hasRole(Role.ADMIN.name())
-
-                                .anyRequest()
-                                .authenticated()
-
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/api/auth/**").permitAll()   // ✅ SỬA Ở ĐÂY
+                        .requestMatchers("/api/admin/**").hasRole(Role.ADMIN.name())
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll()
                 )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
