@@ -19,8 +19,7 @@ services:
       - app-net
 
   backend:
-    build:
-      context: ./backend
+    image: datto04/myapp-backend:1.0
     container_name: spring-backend
     restart: unless-stopped
     depends_on:
@@ -35,8 +34,7 @@ services:
       - app-net
 
   frontend:
-    build:
-      context: ./frontend
+    image: datto04/myapp-frontend:1.0
     container_name: react-frontend
     restart: unless-stopped
     depends_on:
