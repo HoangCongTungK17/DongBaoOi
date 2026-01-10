@@ -162,7 +162,7 @@ public class AuthenticationService {
                 User user = userRepository
                         .findByEmail(otpVerificationRequestDto.getEmailId())
                         .orElseThrow(() -> new UsernameNotFoundException("Email not found: " + otpVerificationRequestDto.getEmailId()));
-                user.setEmailVerified(!user.isEmailVerified());
+                user.setIsEmailVerified(!Boolean.TRUE.equals(user.getIsEmailVerified()));
                 userRepository.save(user);
                 return ResponseEntity.ok("Two factor auth changed successfully");
 
@@ -186,7 +186,7 @@ public class AuthenticationService {
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UserException(request.getEmail() + " does not exist"));
 
-        if (user.isEmailVerified()) {
+        if (Boolean.TRUE.equals(user.getIsEmailVerified())) {
             sendOtp(user, "2FA: Request to log in to your account");
             return ResponseEntity.ok(getOtpSendMessage());
         } else {

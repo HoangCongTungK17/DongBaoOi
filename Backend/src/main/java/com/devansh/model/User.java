@@ -35,7 +35,7 @@ public class User implements UserDetails {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "email_verified")
-    private boolean isEmailVerified;
+    private Boolean isEmailVerified = false;
 
     @Enumerated(EnumType.STRING)
     private Role role;
