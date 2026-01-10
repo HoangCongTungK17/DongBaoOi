@@ -6,6 +6,13 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: 123456
       MYSQL_DATABASE: myapp_db
+      # JWT Secret (required!)                                                                                                                                                                
+      APPLICATION_SECURITY_JWT_SECRET_KEY: 635D2472BFCDB538749103121A0000117253039B34B43C5E1A26E4F1EF4BCF16                                                                                   
+      APPLICATION_SECURITY_JWT_EXPIRATION: 86400000                                                                                                                                           
+      APPLICATION_SECURITY_JWT_REFRESH_TOKEN_EXPIRATION: 604800000                                                                                                                            
+      # OTP                                                                                                                                                                                   
+      TWO_FACTOR_AUTH_OTP_EXPIRATION_MINUTES: 5                                                                                                                                               
+
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
