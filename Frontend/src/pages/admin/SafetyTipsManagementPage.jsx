@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllSafetyTips, createSafetyTip, updateSafetyTip, deleteSafetyTip } from "../../Redux/SafetyTips/Action";
-import { getAllZones } from "../../Redux/DisasterZone/Action";
+import { getAllDisasterZones } from "../../Redux/DisasterZone/Action";
 import { toast } from "sonner";
 import {
   Search,
@@ -50,7 +50,7 @@ function SafetyTipsManagementPage() {
 
   useEffect(() => {
     dispatch(getAllSafetyTips());
-    dispatch(getAllZones());
+    dispatch(getAllDisasterZones());
   }, [dispatch]);
 
   const handleOpenCreate = () => {
