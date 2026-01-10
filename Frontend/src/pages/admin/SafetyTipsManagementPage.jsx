@@ -66,10 +66,12 @@ function SafetyTipsManagementPage() {
 
   const handleOpenEdit = (tip) => {
     setSelectedTip(tip);
+    // Backend returns Vietnamese label (e.g., "LŨ LỤT"), need to find enum value
+    const typeMatch = DISASTER_TYPES.find((t) => t.label === tip.disasterType);
     setFormData({
       title: tip.title,
       description: tip.description,
-      disasterType: tip.disasterType || "UNKNOWN", // Backend returns enum value directly
+      disasterType: typeMatch?.value || "UNKNOWN",
       disasterZoneId: tip.disasterZoneDto?.id || null,
     });
     setShowModal(true);
@@ -126,7 +128,8 @@ function SafetyTipsManagementPage() {
     const matchesSearch =
       tip.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tip.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === "ALL" || tip.disasterType === typeFilter;
+    // Backend returns Vietnamese label (e.g., "LŨ LỤT") due to @JsonValue annotation
+    const matchesType = typeFilter === "ALL" || tip.disasterType === getDisasterTypeLabel(typeFilter);
     return matchesSearch && matchesType;
   });
 
@@ -291,7 +294,7 @@ function SafetyTipsManagementPage() {
                       <td className="px-4 py-4">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
                           <AlertTriangle className="h-3 w-3" />
-                          {getDisasterTypeLabel(tip.disasterType)}
+                          {tip.disasterType}
                         </span>
                       </td>
                       <td className="px-4 py-4 hidden lg:table-cell">
@@ -402,7 +405,7 @@ function SafetyTipsManagementPage() {
                   <option value="">Áp dụng chung (tất cả vùng)</option>
                   {allZones?.map((zone) => (
                     <option key={zone.id} value={zone.id}>
-                      {zone.name} - {getDisasterTypeLabel(zone.disasterType)}
+                      {zone.name} - {zone.disasterType}
                     </option>
                   ))}
                 </select>
