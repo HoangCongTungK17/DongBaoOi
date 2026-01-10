@@ -1,0 +1,53 @@
+server:
+  tomcat:
+    max-http-post-size: 10MB
+    max-swallow-size: 10MB
+
+spring:
+  datasource:
+    username: root
+    password: "123456"
+    url: jdbc:mysql://mysql:3306/myapp_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your_email@gmail.com
+    password: your_app_password
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+application:
+  security:
+    jwt:
+      secret-key: 635D2472BFCDB538749103121A0000117253039B34B43C5E1A26E4F1EF4BCF16
+      expiration: 86400000
+      refresh-token:
+        expiration: 604800000
+
+two:
+  factor:
+    auth:
+      otp:
+        expiration-minutes: 5
+
+groq:
+  api:
+    key: your_groq_api_key
+    url: https://api.groq.com/openai/v1/chat/completions
+    model: llama-3.1-8b-instant

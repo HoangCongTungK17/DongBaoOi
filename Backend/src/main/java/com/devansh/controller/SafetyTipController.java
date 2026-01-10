@@ -34,6 +34,11 @@ public class SafetyTipController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/admin/safetyTip")
+    public ResponseEntity<List<SafetyTipDto>> getAllTips() {
+        return ResponseEntity.ok(safetyTipService.getAllSafetyTips());
+    }
+
     @GetMapping("/safetyTip/{tipId}")
     public ResponseEntity<SafetyTipDto> getTip(@PathVariable Integer tipId) {
         return ResponseEntity.ok(safetyTipService.getSafetyTip(tipId));

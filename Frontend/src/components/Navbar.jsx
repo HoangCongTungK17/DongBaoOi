@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Menu, User, LogOut, ChevronDown, X, ShieldCheck } from "lucide-react";
+import { Menu, User, LogOut, ChevronDown, X, ShieldCheck, Users, Lightbulb } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LOGOUT } from "../Redux/Auth/ActionType";
 import { useDispatch, useSelector } from "react-redux";
@@ -8,6 +8,7 @@ import NotificationBell from "./NotificationBell";
 function Navbar() {
   const [open, setOpen] = useState(false); // profile dropdown
   const [sidebar, setSidebar] = useState(false); // mobile sidebar
+  const [adminMenu, setAdminMenu] = useState(false); // admin dropdown
   const location = useLocation();
   const dispatch = useDispatch();
   const { email, isAdmin } = useSelector((store) => store.authStore);
@@ -49,10 +50,36 @@ function Navbar() {
                 Liên hệ
               </Link>
               {isAdmin && (
-                <Link to="/admin/users" className={`${linkBase} flex items-center gap-1 ${location.pathname.startsWith("/admin") ? active : "text-white/90 hover:bg-white/15"}`}>
-                  <ShieldCheck className="h-4 w-4" />
-                  Admin
-                </Link>
+                <div className="relative">
+                  <button
+                    onClick={() => setAdminMenu((v) => !v)}
+                    className={`${linkBase} flex items-center gap-1 ${location.pathname.startsWith("/admin") ? active : "text-white/90 hover:bg-white/15"}`}
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Admin
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                  {adminMenu && (
+                    <div className="absolute left-0 mt-1 w-48 origin-top-left rounded-lg border border-gray-200 bg-white py-1.5 shadow-lg z-50">
+                      <Link
+                        to="/admin/users"
+                        onClick={() => setAdminMenu(false)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <Users className="h-4 w-4" />
+                        Quan ly nguoi dung
+                      </Link>
+                      <Link
+                        to="/admin/safety-tips"
+                        onClick={() => setAdminMenu(false)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <Lightbulb className="h-4 w-4" />
+                        Huong dan an toan
+                      </Link>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -133,10 +160,16 @@ function Navbar() {
                 Liên hệ
               </Link>
               {isAdmin && (
-                <Link to="/admin/users" onClick={() => setSidebar(false)} className={`${linkBase} flex items-center gap-2 ${location.pathname.startsWith("/admin") ? active : inactive}`}>
-                  <ShieldCheck className="h-4 w-4" />
-                  Admin
-                </Link>
+                <>
+                  <Link to="/admin/users" onClick={() => setSidebar(false)} className={`${linkBase} flex items-center gap-2 ${location.pathname === "/admin/users" ? active : inactive}`}>
+                    <Users className="h-4 w-4" />
+                    Quan ly nguoi dung
+                  </Link>
+                  <Link to="/admin/safety-tips" onClick={() => setSidebar(false)} className={`${linkBase} flex items-center gap-2 ${location.pathname === "/admin/safety-tips" ? active : inactive}`}>
+                    <Lightbulb className="h-4 w-4" />
+                    Huong dan an toan
+                  </Link>
+                </>
               )}
             </nav>
           </div>

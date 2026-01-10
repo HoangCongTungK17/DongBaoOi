@@ -78,4 +78,11 @@ public class SafetyTipServiceImpl implements SafetyTipService {
         return tips.stream().map(tipMapper::toDto).toList();
     }
 
+    @Override
+    public List<SafetyTipDto> getAllSafetyTips() {
+        return tipRepository.findAll().stream()
+                .map(tipMapper::toDto)
+                .toList();
+    }
+
 }

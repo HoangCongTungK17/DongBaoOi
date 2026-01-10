@@ -30,6 +30,7 @@ export const getAllUsers = () => async (dispatch) => {
     });
 
     const resData = await res.json();
+    console.log("Get all users response:", { status: res.status, data: resData });
 
     if (!res.ok) {
       dispatch({ type: GET_ALL_USERS_FAILURE, payload: resData.message || "Failed to fetch users" });
@@ -41,7 +42,7 @@ export const getAllUsers = () => async (dispatch) => {
       payload: resData,
     });
   } catch (error) {
-    console.log("Get all users (error): ", error);
+    console.error("Get all users (error): ", error);
     dispatch({ type: GET_ALL_USERS_FAILURE, payload: "Something went wrong!" });
   }
 };

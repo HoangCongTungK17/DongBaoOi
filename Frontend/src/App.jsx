@@ -14,6 +14,7 @@ import ProfilePage from "./pages/ProfilePage.jsx";
 import ReportPage from "./pages/ReportPage.jsx";
 import ContactsPage from "./pages/ContactsPage.jsx";
 import UsersManagementPage from "./pages/admin/UsersManagementPage.jsx";
+import SafetyTipsManagementPage from "./pages/admin/SafetyTipsManagementPage.jsx";
 import ChatBot from "./components/ChatBot.jsx";
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
             <Route path="/report" element={<ReportPage />} />
             <Route path="/contacts" element={<ContactsPage />} />
             <Route path="/admin/users" element={<UsersManagementPage />} />
+            <Route path="/admin/safety-tips" element={<SafetyTipsManagementPage />} />
           </Routes>
           <ChatBot />
         </div>

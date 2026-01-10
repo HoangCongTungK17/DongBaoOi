@@ -9,8 +9,11 @@ import DeleteUserDialog from "./DeleteUserDialog";
 
 function UsersManagementPage() {
   const dispatch = useDispatch();
-  const { users, loading, updateLoading } = useSelector((store) => store.adminStore);
+  const { users, loading, updateLoading, error } = useSelector((store) => store.adminStore);
   const { isAdmin } = useSelector((store) => store.authStore);
+
+  // Debug log
+  console.log("UsersManagementPage state:", { users, loading, error, isAdmin });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
@@ -153,6 +156,13 @@ function UsersManagementPage() {
             </div>
           </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+            <p className="font-medium">Error: {error}</p>
+          </div>
+        )}
 
         {/* Users Table */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

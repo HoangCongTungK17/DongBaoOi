@@ -12,5 +12,6 @@ public interface SafetyTipService {
     void deleteSafetyTip(Integer tipId);
     SafetyTipDto getSafetyTip(Integer tipId);
     List<SafetyTipDto> getTipsForZone(Integer zoneId); // returns zone-specific + global tips
+    List<SafetyTipDto> getAllSafetyTips(); // for admin management
 
 }
