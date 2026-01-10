@@ -67,7 +67,7 @@ function Navbar() {
                         className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         <Users className="h-4 w-4" />
-                        Quan ly nguoi dung
+                        Quản lý người dùng
                       </Link>
                       <Link
                         to="/admin/safety-tips"
@@ -75,7 +75,7 @@ function Navbar() {
                         className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         <Lightbulb className="h-4 w-4" />
-                        Huong dan an toan
+                        Hướng dẫn an toàn
                       </Link>
                     </div>
                   )}
@@ -163,11 +163,11 @@ function Navbar() {
                 <>
                   <Link to="/admin/users" onClick={() => setSidebar(false)} className={`${linkBase} flex items-center gap-2 ${location.pathname === "/admin/users" ? active : inactive}`}>
                     <Users className="h-4 w-4" />
-                    Quan ly nguoi dung
+                    Quản lý người dùng
                   </Link>
                   <Link to="/admin/safety-tips" onClick={() => setSidebar(false)} className={`${linkBase} flex items-center gap-2 ${location.pathname === "/admin/safety-tips" ? active : inactive}`}>
                     <Lightbulb className="h-4 w-4" />
-                    Huong dan an toan
+                    Hướng dẫn an toàn
                   </Link>
                 </>
               )}

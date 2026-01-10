@@ -18,22 +18,22 @@ import {
 } from "lucide-react";
 
 const DISASTER_TYPES = [
-  { value: "FLOOD", label: "LU LUT" },
-  { value: "EARTHQUAKE", label: "DONG DAT" },
-  { value: "LANDSLIDE", label: "SAT LO DAT" },
-  { value: "TORNADO", label: "BAO/SIEU BAO" },
-  { value: "SINKHOLE", label: "HO SUT DAT" },
-  { value: "TSUNAMI", label: "TRIEU CUONG" },
-  { value: "WILDFIRE", label: "CHAY RUNG" },
-  { value: "BLIZZARD", label: "MUA DA" },
-  { value: "HOUSE_FIRE", label: "HOA HOAN" },
-  { value: "UNKNOWN", label: "KHONG XAC DINH" },
+  { value: "FLOOD", label: "LŨ LỤT" },
+  { value: "EARTHQUAKE", label: "ĐỘNG ĐẤT" },
+  { value: "LANDSLIDE", label: "SẠT LỞ ĐẤT" },
+  { value: "TORNADO", label: "BÃO/SIÊU BÃO" },
+  { value: "SINKHOLE", label: "HỐ SỤT ĐẤT" },
+  { value: "TSUNAMI", label: "TRIỀU CƯỜNG" },
+  { value: "WILDFIRE", label: "CHÁY RỪNG" },
+  { value: "BLIZZARD", label: "MƯA ĐÁ" },
+  { value: "HOUSE_FIRE", label: "HỎA HOẠN" },
+  { value: "UNKNOWN", label: "KHÔNG XÁC ĐỊNH" },
 ];
 
 function SafetyTipsManagementPage() {
   const dispatch = useDispatch();
   const { allSafetyTips, safetyTipsLoading, updateLoading } = useSelector((store) => store.safetyTipsStore);
-  const { zones } = useSelector((store) => store.disasterStore);
+  const { allZones } = useSelector((store) => store.disasterStore);
   const { isAdmin } = useSelector((store) => store.authStore);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -66,12 +66,10 @@ function SafetyTipsManagementPage() {
 
   const handleOpenEdit = (tip) => {
     setSelectedTip(tip);
-    // Find the enum value from the Vietnamese name
-    const typeMatch = DISASTER_TYPES.find((t) => t.label === tip.disasterType);
     setFormData({
       title: tip.title,
       description: tip.description,
-      disasterType: typeMatch?.value || "UNKNOWN",
+      disasterType: tip.disasterType || "UNKNOWN", // Backend returns enum value directly
       disasterZoneId: tip.disasterZoneDto?.id || null,
     });
     setShowModal(true);
@@ -80,7 +78,7 @@ function SafetyTipsManagementPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.description.trim()) {
-      toast.error("Vui long dien day du thong tin");
+      toast.error("Vui lòng điền đầy đủ thông tin");
       return;
     }
 
@@ -99,11 +97,11 @@ function SafetyTipsManagementPage() {
     }
 
     if (result.success) {
-      toast.success(selectedTip ? "Cap nhat thanh cong!" : "Tao moi thanh cong!");
+      toast.success(selectedTip ? "Cập nhật thành công!" : "Tạo mới thành công!");
       setShowModal(false);
       dispatch(getAllSafetyTips());
     } else {
-      toast.error("Co loi xay ra!");
+      toast.error("Có lỗi xảy ra!");
     }
   };
 
@@ -111,19 +109,24 @@ function SafetyTipsManagementPage() {
     if (!selectedTip) return;
     const result = await dispatch(deleteSafetyTip(selectedTip.id));
     if (result.success) {
-      toast.success("Da xoa huong dan!");
+      toast.success("Đã xóa hướng dẫn!");
       setShowDeleteDialog(false);
       setSelectedTip(null);
     } else {
-      toast.error("Xoa that bai!");
+      toast.error("Xóa thất bại!");
     }
+  };
+
+  // Helper function to get Vietnamese label from enum value
+  const getDisasterTypeLabel = (enumValue) => {
+    return DISASTER_TYPES.find((t) => t.value === enumValue)?.label || enumValue;
   };
 
   const filteredTips = allSafetyTips.filter((tip) => {
     const matchesSearch =
       tip.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tip.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === "ALL" || tip.disasterType === DISASTER_TYPES.find((t) => t.value === typeFilter)?.label;
+    const matchesType = typeFilter === "ALL" || tip.disasterType === typeFilter;
     return matchesSearch && matchesType;
   });
 
@@ -138,8 +141,8 @@ function SafetyTipsManagementPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800">Truy cap bi tu choi</h2>
-          <p className="text-gray-600 mt-2">Ban khong co quyen truy cap trang nay.</p>
+          <h2 className="text-2xl font-bold text-gray-800">Truy cập bị từ chối</h2>
+          <p className="text-gray-600 mt-2">Bạn không có quyền truy cập trang này.</p>
         </div>
       </div>
     );
@@ -152,9 +155,9 @@ function SafetyTipsManagementPage() {
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-3">
             <Lightbulb className="h-8 w-8 text-yellow-500" />
-            Quan ly Huong dan An toan
+            Quản lý Hướng dẫn An toàn
           </h1>
-          <p className="text-gray-600 mt-1">Quan ly cac huong dan an toan cho nguoi dung</p>
+          <p className="text-gray-600 mt-1">Quản lý các hướng dẫn an toàn cho người dùng</p>
         </div>
 
         {/* Stats Cards */}
@@ -165,7 +168,7 @@ function SafetyTipsManagementPage() {
                 <Lightbulb className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Tong so huong dan</p>
+                <p className="text-sm text-gray-500">Tổng số hướng dẫn</p>
                 <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
               </div>
             </div>
@@ -176,7 +179,7 @@ function SafetyTipsManagementPage() {
                 <Globe className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Huong dan chung</p>
+                <p className="text-sm text-gray-500">Hướng dẫn chung</p>
                 <p className="text-2xl font-bold text-gray-800">{stats.global}</p>
               </div>
             </div>
@@ -187,7 +190,7 @@ function SafetyTipsManagementPage() {
                 <MapPin className="h-5 w-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Theo vung cu the</p>
+                <p className="text-sm text-gray-500">Theo vùng cụ thể</p>
                 <p className="text-2xl font-bold text-gray-800">{stats.zoneSpecific}</p>
               </div>
             </div>
@@ -201,7 +204,7 @@ function SafetyTipsManagementPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Tim kiem theo tieu de hoac noi dung..."
+                placeholder="Tìm kiếm theo tiêu đề hoặc nội dung..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -213,7 +216,7 @@ function SafetyTipsManagementPage() {
                 onChange={(e) => setTypeFilter(e.target.value)}
                 className="px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                <option value="ALL">Tat ca loai</option>
+                <option value="ALL">Tất cả loại</option>
                 {DISASTER_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
                     {type.label}
@@ -225,12 +228,12 @@ function SafetyTipsManagementPage() {
                 className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2"
               >
                 <Plus className="h-5 w-5" />
-                Them moi
+                Thêm mới
               </button>
               <button
                 onClick={() => dispatch(getAllSafetyTips())}
                 className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                title="Lam moi"
+                title="Làm mới"
               >
                 <RefreshCw className={`h-5 w-5 text-gray-600 ${safetyTipsLoading ? "animate-spin" : ""}`} />
               </button>
@@ -243,12 +246,12 @@ function SafetyTipsManagementPage() {
           {safetyTipsLoading ? (
             <div className="p-8 text-center">
               <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-              <p className="text-gray-500 mt-3">Dang tai...</p>
+              <p className="text-gray-500 mt-3">Đang tải...</p>
             </div>
           ) : filteredTips.length === 0 ? (
             <div className="p-8 text-center">
               <Lightbulb className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">Khong tim thay huong dan nao</p>
+              <p className="text-gray-500">Không tìm thấy hướng dẫn nào</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -259,19 +262,19 @@ function SafetyTipsManagementPage() {
                       ID
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Tieu de
+                      Tiêu đề
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                      Mo ta
+                      Mô tả
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Loai tham hoa
+                      Loại thảm họa
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                      Vung ap dung
+                      Vùng áp dụng
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Thao tac
+                      Thao tác
                     </th>
                   </tr>
                 </thead>
@@ -288,7 +291,7 @@ function SafetyTipsManagementPage() {
                       <td className="px-4 py-4">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
                           <AlertTriangle className="h-3 w-3" />
-                          {tip.disasterType}
+                          {getDisasterTypeLabel(tip.disasterType)}
                         </span>
                       </td>
                       <td className="px-4 py-4 hidden lg:table-cell">
@@ -300,7 +303,7 @@ function SafetyTipsManagementPage() {
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                             <Globe className="h-3 w-3" />
-                            Ap dung chung
+                            Áp dụng chung
                           </span>
                         )}
                       </td>
@@ -309,7 +312,7 @@ function SafetyTipsManagementPage() {
                           <button
                             onClick={() => handleOpenEdit(tip)}
                             className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
-                            title="Chinh sua"
+                            title="Chỉnh sửa"
                           >
                             <Edit2 className="h-4 w-4" />
                           </button>
@@ -319,7 +322,7 @@ function SafetyTipsManagementPage() {
                               setShowDeleteDialog(true);
                             }}
                             className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
-                            title="Xoa"
+                            title="Xóa"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -335,7 +338,7 @@ function SafetyTipsManagementPage() {
 
         {/* Footer info */}
         <div className="mt-4 text-center text-sm text-gray-500">
-          Hien thi {filteredTips.length} / {allSafetyTips.length} huong dan
+          Hiển thị {filteredTips.length} / {allSafetyTips.length} hướng dẫn
         </div>
       </div>
 
@@ -345,7 +348,7 @@ function SafetyTipsManagementPage() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
               <h3 className="text-lg font-semibold text-gray-800">
-                {selectedTip ? "Chinh sua huong dan" : "Them huong dan moi"}
+                {selectedTip ? "Chỉnh sửa hướng dẫn" : "Thêm hướng dẫn mới"}
               </h3>
               <button onClick={() => setShowModal(false)} className="p-1 hover:bg-gray-100 rounded">
                 <X className="h-5 w-5 text-gray-500" />
@@ -353,29 +356,29 @@ function SafetyTipsManagementPage() {
             </div>
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tieu de *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tiêu đề *</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nhap tieu de huong dan..."
+                  placeholder="Nhập tiêu đề hướng dẫn..."
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mo ta *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả *</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nhap noi dung huong dan chi tiet..."
+                  placeholder="Nhập nội dung hướng dẫn chi tiết..."
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Loai tham hoa *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Loại thảm họa *</label>
                 <select
                   value={formData.disasterType}
                   onChange={(e) => setFormData({ ...formData, disasterType: e.target.value })}
@@ -390,16 +393,16 @@ function SafetyTipsManagementPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vung ap dung (de trong = ap dung chung)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vùng áp dụng (để trống = áp dụng chung)</label>
                 <select
                   value={formData.disasterZoneId || ""}
                   onChange={(e) => setFormData({ ...formData, disasterZoneId: e.target.value ? parseInt(e.target.value) : null })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Ap dung chung (tat ca vung)</option>
-                  {zones?.map((zone) => (
+                  <option value="">Áp dụng chung (tất cả vùng)</option>
+                  {allZones?.map((zone) => (
                     <option key={zone.id} value={zone.id}>
-                      {zone.name} - {zone.disasterType}
+                      {zone.name} - {getDisasterTypeLabel(zone.disasterType)}
                     </option>
                   ))}
                 </select>
@@ -410,14 +413,14 @@ function SafetyTipsManagementPage() {
                   onClick={() => setShowModal(false)}
                   className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  Huy
+                  Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={updateLoading}
                   className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {updateLoading ? "Dang xu ly..." : selectedTip ? "Cap nhat" : "Tao moi"}
+                  {updateLoading ? "Đang xử lý..." : selectedTip ? "Cập nhật" : "Tạo mới"}
                 </button>
               </div>
             </form>
@@ -433,9 +436,9 @@ function SafetyTipsManagementPage() {
               <div className="mx-auto w-12 h-12 flex items-center justify-center bg-red-100 rounded-full mb-4">
                 <Trash2 className="h-6 w-6 text-red-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Xac nhan xoa</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Xác nhận xóa</h3>
               <p className="text-gray-600 mb-6">
-                Ban co chac chan muon xoa huong dan "{selectedTip?.title}"? Hanh dong nay khong the hoan tac.
+                Bạn có chắc chắn muốn xóa hướng dẫn "{selectedTip?.title}"? Hành động này không thể hoàn tác.
               </p>
               <div className="flex gap-3">
                 <button
@@ -445,14 +448,14 @@ function SafetyTipsManagementPage() {
                   }}
                   className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  Huy
+                  Hủy
                 </button>
                 <button
                   onClick={handleDelete}
                   disabled={updateLoading}
                   className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {updateLoading ? "Dang xoa..." : "Xoa"}
+                  {updateLoading ? "Đang xóa..." : "Xóa"}
                 </button>
               </div>
             </div>
